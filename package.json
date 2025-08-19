@@ -1,0 +1,51 @@
+{
+  "name": "brightdata",
+  "version": "1.0.0",
+  "description": "JavaScript SDK for Bright Data Web Scraping and SERP APIs",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "scripts": {
+    "test": "jest",
+    "lint": "eslint src/**/*.js",
+    "build": "echo 'Build complete'",
+    "prepublishOnly": "npm test && npm run lint"
+  },
+  "keywords": [
+    "brightdata",
+    "web scraping",
+    "proxy",
+    "serp",
+    "search",
+    "data extraction",
+    "web unlocker"
+  ],
+  "author": "Bright Data <support@brightdata.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/brightdata/bright-data-sdk-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/brightdata/bright-data-sdk-js/issues"
+  },
+  "homepage": "https://github.com/brightdata/bright-data-sdk-js#readme",
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "dotenv": "^16.0.0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "eslint": "^8.0.0",
+    "@types/node": "^18.0.0"
+  },
+  "files": [
+    "src/",
+    "examples/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ]
+}
