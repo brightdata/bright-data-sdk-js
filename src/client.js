@@ -15,7 +15,7 @@ const {ValidationError, AuthenticationError, APIError} =
 const E = module.exports;
 const logger = getLogger('client');
 
-class BdClient {
+class bdclient {
     constructor(opt = {}){
         const {
             api_token,
@@ -165,4 +165,4 @@ class BdClient {
     }
 }
 
-E.BdClient = BdClient;
+E.bdclient = bdclient;

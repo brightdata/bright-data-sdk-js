@@ -1,6 +1,6 @@
 'use strict'; /*jslint node:true*/
 
-const {BdClient} = require('./client.js');
+const {bdclient} = require('./client.js');
 const {
     BrightDataError,
     ValidationError,
@@ -13,8 +13,7 @@ const {
 const E = module.exports;
 const VERSION = '1.0.0';
 
-E.BdClient = BdClient;
-E.bdclient = BdClient;
+E.bdclient = bdclient;
 E.BrightDataError = BrightDataError;
 E.ValidationError = ValidationError;
 E.AuthenticationError = AuthenticationError;
@@ -22,4 +21,4 @@ E.ZoneError = ZoneError;
 E.NetworkError = NetworkError;
 E.APIError = APIError;
 E.VERSION = VERSION;
-E.default = BdClient;
+E.default = bdclient;

@@ -75,9 +75,20 @@ class SearchAPI {
             timeout = null
         } = opt;
         const encoded_query = encodeURIComponent(query);
+        let search_url;
+        switch (search_engine){
+        case 'bing':
+            search_url = `https://www.bing.com/search?q=${encoded_query}`;
+            break;
+        case 'yandex':
+            search_url = `https://yandex.com/search/?text=${encoded_query}`;
+            break;
+        case 'google':
+        default:
+            search_url = `https://www.google.com/search?q=${encoded_query}`;
+        }
         const request_data = {
-            query: encoded_query,
-            search_engine,
+            url: search_url,
             zone,
             format: response_format,
             method: method.toUpperCase(),
@@ -94,10 +105,10 @@ class SearchAPI {
         const request_config = {
             timeout: timeout || this.default_timeout,
             method: 'POST',
-            url: 'https://api.brightdata.com/serp',
+            url: 'https://api.brightdata.com/request',
             data: request_data
         };
-        logRequest('POST', 'https://api.brightdata.com/serp', request_data);
+        logRequest('POST', 'https://api.brightdata.com/request', request_data);
         try {
             const response = await retryRequest(
                 ()=>this.axios_instance.request(request_config),
