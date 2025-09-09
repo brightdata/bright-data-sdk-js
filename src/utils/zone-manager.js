@@ -12,13 +12,13 @@ const logger = getLogger('utils.zone-manager');
 class ZoneManager {
     constructor(axios_instance){
         this.axios_instance = axios_instance;
-        this.base_url = 'https://brightdata.com/api/zone';
+        this.base_url = 'https://api.brightdata.com/zone';
     }
     async list_zones(){
         logger.info('Fetching list of active zones');
         try {
             const response = await retryRequest(
-                ()=>this.axios_instance.get(`${this.base_url}/zones`), 3, 1.5);
+                ()=>this.axios_instance.get(`${this.base_url}/get_active_zones`), 3, 1.5);
             const zones = response.data || [];
             logger.info(`Found ${zones.length} active zones`);
             return zones.map(zone=>({
@@ -57,15 +57,39 @@ class ZoneManager {
     async create_zone(zone_name, zone_type = 'static', opt = {}){
         validateZoneName(zone_name);
         logger.info(`Creating zone: ${zone_name} (type: ${zone_type})`);
+        
         const zone_data = {
-            zone: zone_name,
-            zone_type,
-            ...opt
+            zone: {
+                name: zone_name,
+                type: zone_type
+            },
+            plan: {
+                type: zone_type,
+                domain_whitelist: opt.domain_whitelist || '',
+                ips_type: opt.ips_type || 'shared',
+                bandwidth: opt.bandwidth || 'bandwidth',
+                ip_alloc_preset: opt.ip_alloc_preset || 'shared_block',
+                ips: opt.ips || 0,
+                country: opt.country || '',
+                country_city: opt.country_city || '',
+                mobile: opt.mobile || false,
+                serp: zone_type === 'serp',
+                city: opt.city || false,
+                asn: opt.asn || false,
+                vip: opt.vip || false,
+                vips_type: opt.vips_type || 'shared',
+                vips: opt.vips || 0,
+                vip_country: opt.vip_country || '',
+                vip_country_city: opt.vip_country_city || '',
+                pool_ip_type: opt.pool_ip_type || '',
+                ub_premium: opt.ub_premium || false,
+                solve_captcha_disable: opt.solve_captcha_disable !== false
+            }
         };
+        
         try {
             const response = await retryRequest(
-                ()=>this.axios_instance.post(`${this.base_url}/create`,
-                    zone_data), 3, 1.5);
+                ()=>this.axios_instance.post(this.base_url, zone_data), 3, 1.5);
             logger.info(`Successfully created zone: ${zone_name}`);
             return response.data;
         } catch(e){
@@ -103,7 +127,7 @@ class ZoneManager {
                 web_unlocker_zone);
             if (!results.web_unlocker.exists){
                 logger.info(`Creating web unlocker zone: ${web_unlocker_zone}`);
-                await this.create_zone(web_unlocker_zone, 'static');
+                await this.create_zone(web_unlocker_zone, 'unblocker');
                 results.web_unlocker.created = true;
             } else
                 logger.info(`Web unlocker zone already exists: `+
@@ -111,7 +135,7 @@ class ZoneManager {
             results.serp.exists = await this.zone_exists(serp_zone);
             if (!results.serp.exists){
                 logger.info(`Creating SERP zone: ${serp_zone}`);
-                await this.create_zone(serp_zone, 'static');
+                await this.create_zone(serp_zone, 'serp');
                 results.serp.created = true;
             } else
                 logger.info(`SERP zone already exists: ${serp_zone}`);
