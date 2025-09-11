@@ -18,7 +18,7 @@ For a quick start, you can try running our example files in this repository.
 
 ## Installation
 
-Install directly from GitHub:
+Install the package from GitHub:
 
 ```bash
 npm install brightdata/bright-data-sdk-js
@@ -33,9 +33,6 @@ yarn add brightdata/bright-data-sdk-js
 ## Quick Start
 
 ### 1. Initialize the Client
-
-> [!IMPORTANT]
-> Go to your [**account settings**](https://brightdata.com/cp/setting/users), to verify that your API key has **"admin permissions"**.
 
 ```javascript
 const { bdclient } = require('brightdata');
@@ -59,22 +56,36 @@ const client = new bdclient({
 ### 2. Scrape Websites
 
 ```javascript
-// Single URL
+// Single URL - Returns markdown string by default
 const result = client.scrape('https://example.com');
-console.log(result);
+console.log(result); // Output: markdown formatted web page content
 
 // Multiple URLs (parallel processing)
 const urls = ['https://example1.com', 'https://example2.com', 'https://example3.com'];
 const results = client.scrape(urls);
-console.log(results);
+console.log(results); // Returns array of markdown strings
 
-// Custom options
-const result = client.scrape('https://example.com', {
-    response_format: 'raw',
-    country: 'gb',
-    data_format: 'screenshot'
+// Different data formats available
+const htmlResult = client.scrape('https://example.com', {
+    data_format: 'raw'  // Returns raw HTML (default: 'markdown')
 });
-console.log(result);
+
+const screenshotResult = client.scrape('https://example.com', {
+    data_format: 'screenshot'  // Returns base64 screenshot image
+});
+
+// Different response formats
+const jsonResult = client.scrape('https://example.com', {
+    response_format: 'json'  // Returns parsed JSON object (default: 'raw' string)
+});
+
+// Combined custom options
+const result = client.scrape('https://example.com', {
+    response_format: 'raw',    // 'raw' (default) or 'json'
+    data_format: 'markdown',   // 'markdown' (default), 'raw', 'screenshot', etc.
+    country: 'gb',             // Two-letter country code
+    method: 'GET'              // HTTP method (default: 'GET')
+});
 ```
 
 ### 3. Search Engine Results
