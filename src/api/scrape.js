@@ -1,6 +1,7 @@
 'use strict'; /*jslint node:true*/
 
 const request = require('sync-request');
+const {USER_AGENT,REQUEST_API_URL} = require('../utils/constants.js');
 const {
     validateUrl,
     validateZoneName,
@@ -81,16 +82,16 @@ class WebScraper {
             }
         });
         
-        logRequest('POST','https://api.brightdata.com/request',request_data);
+        logRequest('POST',REQUEST_API_URL,request_data);
         
         try {
-            const response = request('POST','https://api.brightdata.com/request',{
+            const response = request('POST',REQUEST_API_URL,{
                 json:request_data,
                 timeout:timeout || this.default_timeout,
                 headers:{
                     'Authorization':`Bearer ${this.api_token}`,
                     'Content-Type':'application/json',
-                    'User-Agent':'brightdata-sdk-js/1.0.0'
+                    'User-Agent':USER_AGENT
                 }
             });
             
@@ -146,7 +147,7 @@ class WebScraper {
                 requestBody.country = country.toLowerCase();
             }
             
-            return fetch('https://api.brightdata.com/request',{
+            return fetch(REQUEST_API_URL,{
                 method:'POST',
                 headers:{
                     'Authorization':`Bearer ${this.api_token}`,

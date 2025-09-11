@@ -6,7 +6,18 @@ require('dotenv').config();
 
 const {WebScraper} = require('./api/scrape.js');
 const {SearchAPI} = require('./api/search.js');
+const {ZoneManager} = require('./utils/zone-manager.js');
 const {setupLogging, getLogger} = require('./utils/logging-config.js');
+const {
+    DEFAULT_MAX_WORKERS,
+    DEFAULT_TIMEOUT,
+    CONNECTION_POOL_SIZE,
+    MAX_RETRIES,
+    RETRY_BACKOFF_FACTOR,
+    RETRY_STATUSES,
+    DEFAULT_WEB_UNLOCKER_ZONE,
+    DEFAULT_SERP_ZONE
+} = require('./utils/constants.js');
 const {ValidationError, AuthenticationError, APIError} = 
     require('./exceptions/errors.js');
 
@@ -48,21 +59,26 @@ class bdclient {
             '***';
         logger.info(`API token validated successfully: ${token_preview}`);
         this.web_unlocker_zone = web_unlocker_zone ||
-            process.env.WEB_UNLOCKER_ZONE || 'sdk_unlocker';
-        this.serp_zone = serp_zone || process.env.SERP_ZONE || 'sdk_serp';
+            process.env.WEB_UNLOCKER_ZONE || DEFAULT_WEB_UNLOCKER_ZONE;
+        this.serp_zone = serp_zone || process.env.SERP_ZONE || DEFAULT_SERP_ZONE;
         this.auto_create_zones = auto_create_zones;
-        this.DEFAULT_MAX_WORKERS = 10;
-        this.DEFAULT_TIMEOUT = 30*1000;
-        this.CONNECTION_POOL_SIZE = 20;
-        this.MAX_RETRIES = 3;
-        this.RETRY_BACKOFF_FACTOR = 1.5;
-        this.RETRY_STATUSES = new Set([429, 500, 502, 503, 504]);
+        this.DEFAULT_MAX_WORKERS = DEFAULT_MAX_WORKERS;
+        this.DEFAULT_TIMEOUT = DEFAULT_TIMEOUT;
+        this.CONNECTION_POOL_SIZE = CONNECTION_POOL_SIZE;
+        this.MAX_RETRIES = MAX_RETRIES;
+        this.RETRY_BACKOFF_FACTOR = RETRY_BACKOFF_FACTOR;
+        this.RETRY_STATUSES = RETRY_STATUSES;
         logger.info('HTTP client configured with secure headers');
         this.web_scraper = new WebScraper(this.api_token,
             this.DEFAULT_TIMEOUT, this.MAX_RETRIES, this.RETRY_BACKOFF_FACTOR);
         this.search_api = new SearchAPI(this.api_token,
             this.DEFAULT_TIMEOUT, this.MAX_RETRIES, this.RETRY_BACKOFF_FACTOR);
-        // Zone auto-creation disabled for synchronous version
+        this.zone_manager = new ZoneManager(null, this.api_token);
+        
+        // Auto-create zones if enabled
+        if (this.auto_create_zones) {
+            this._ensure_zones();
+        }
     }
     scrape(url, opt = {}){
         const {
@@ -137,9 +153,27 @@ class bdclient {
         logger.info(`Content successfully saved to: ${filename}`);
         return path.resolve(filename);
     }
+    _ensure_zones(){
+        try {
+            logger.info('Ensuring required zones exist for synchronous client');
+            const results = this.zone_manager.ensureRequiredZones(
+                this.web_unlocker_zone, this.serp_zone);
+            
+            if (results.web_unlocker.created || results.serp.created) {
+                logger.info('Zone auto-creation completed successfully', results);
+            }
+        } catch (e) {
+            logger.warning(`Zone auto-creation failed: ${e.message}. Continuing with existing zones.`);
+        }
+    }
+    
     list_zones(){
-        logger.info('Zone listing not available in synchronous version');
-        return [];
+        try {
+            return this.zone_manager.list_zones();
+        } catch (e) {
+            logger.error(`Failed to list zones: ${e.message}`);
+            return [];
+        }
     }
 }
 

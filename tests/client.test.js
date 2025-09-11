@@ -2,25 +2,28 @@
 
 const {bdclient, ValidationError} = require('../src/index.js');
 
-jest.mock('axios', ()=>({
-    create: jest.fn(()=>({
-        request: jest.fn().mockResolvedValue({data: 'mock response'}),
-        get: jest.fn().mockResolvedValue({data: []}),
-        post: jest.fn().mockResolvedValue({data: {name: 'test'}})
-    }))
-}));
+// Mock sync-request instead of axios
+jest.mock('sync-request', () => {
+    return jest.fn(() => ({
+        statusCode: 200,
+        getBody: jest.fn(() => JSON.stringify({
+            data: 'mocked search result content',
+            response_format: 'raw'
+        }))
+    }));
+});
 
 describe('bdclient - Simple Usage', ()=>{
-    test('4-line scraping example should work', async ()=>{
-        const client = new bdclient({api_token: 'test_token_123456'});
-        const result = await client.scrape('https://example.com');
-        expect(result).toBe('mock response');
+    test('4-line scraping example should work', ()=>{
+        const client = new bdclient({api_token: 'test_token_1234567890abcdef', auto_create_zones: false});
+        const result = client.scrape('https://example.com');
+        expect(result).toBe('{"data":"mocked search result content","response_format":"raw"}');
     });
     
-    test('4-line search example should work', async ()=>{
-        const client = new bdclient({api_token: 'test_token_123456'});
-        const result = await client.search('test query');
-        expect(result).toBe('mock response');
+    test('4-line search example should work', ()=>{
+        const client = new bdclient({api_token: 'test_token_1234567890abcdef', auto_create_zones: false});
+        const result = client.search('test query');
+        expect(result).toBe('{"data":"mocked search result content","response_format":"raw"}');
     });
     
     test('should reject invalid API token', ()=>{
@@ -28,9 +31,9 @@ describe('bdclient - Simple Usage', ()=>{
             .toThrow(ValidationError);
     });
     
-    test('should reject invalid URL', async ()=>{
-        const client = new bdclient({api_token: 'test_token_123456'});
-        await expect(client.scrape('invalid-url'))
-            .rejects.toThrow(ValidationError);
+    test('should reject invalid URL', ()=>{
+        const client = new bdclient({api_token: 'test_token_1234567890abcdef', auto_create_zones: false});
+        expect(()=>client.scrape('invalid-url'))
+            .toThrow(ValidationError);
     });
 });
