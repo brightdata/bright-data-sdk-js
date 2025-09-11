@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+*.log
+coverage/
+.nyc_output/
+.DS_Store
+tests/
+.github/
+.vscode/
+*.tgz

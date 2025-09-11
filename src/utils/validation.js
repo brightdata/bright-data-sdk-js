@@ -16,13 +16,13 @@ function validate_url(url){
     try {
         const parsed = new URL(url.trim());
         if (!parsed.protocol)
-            throw new ValidationError(`URL must include a scheme (http/https)`+
+            throw new ValidationError('URL must include a scheme (http/https)'+
                 `: ${url}`);
-        if (!['http:', 'https:'].includes(parsed.protocol.toLowerCase()))
-            throw new ValidationError(`URL scheme must be http or https, got: `+
+        if (!['http:','https:'].includes(parsed.protocol.toLowerCase()))
+            throw new ValidationError('URL scheme must be http or https, got: '+
                 `${parsed.protocol}`);
         if (!parsed.hostname)
-            throw new ValidationError(`URL must include a valid domain: `+
+            throw new ValidationError('URL must include a valid domain: '+
                 `${url}`);
         if (/[<>"']/.test(url))
             throw new ValidationError('URL contains invalid characters');
@@ -37,7 +37,7 @@ function validate_zone_name(zone = null){
     if (zone==null || zone==undefined)
         return;
     if (typeof zone!='string')
-        throw new ValidationError(`Zone name must be a string, got `+
+        throw new ValidationError('Zone name must be a string, got '+
             `${typeof zone}`);
     const trimmed_zone = zone.trim();
     if (!trimmed_zone)
@@ -60,7 +60,7 @@ function validate_zone_name(zone = null){
 
 function validate_country_code(country){
     if (typeof country!='string')
-        throw new ValidationError(`Country code must be a string, got `+
+        throw new ValidationError('Country code must be a string, got '+
             `${typeof country}`);
     const trimmed_country = country.trim().toLowerCase();
     if (trimmed_country.length==0)
@@ -76,7 +76,7 @@ function validate_timeout(timeout){
     if (timeout==null || timeout==undefined)
         return;
     if (!Number.isInteger(timeout))
-        throw new ValidationError(`Timeout must be an integer, got `+
+        throw new ValidationError('Timeout must be an integer, got '+
             `${typeof timeout}`);
     if (timeout<=0)
         throw new ValidationError('Timeout must be greater than 0 '+
@@ -90,7 +90,7 @@ function validate_max_workers(max_workers){
     if (max_workers==null || max_workers==undefined)
         return;
     if (!Number.isInteger(max_workers))
-        throw new ValidationError(`max_workers must be an integer, got `+
+        throw new ValidationError('max_workers must be an integer, got '+
             `${typeof max_workers}`);
     if (max_workers<=0)
         throw new ValidationError('max_workers must be greater than 0');
@@ -99,16 +99,16 @@ function validate_max_workers(max_workers){
             'resource exhaustion)');
 }
 
-function validate_url_list(urls, max_urls = 100){
+function validate_url_list(urls,max_urls = 100){
     if (!Array.isArray(urls))
-        throw new ValidationError(`URL list must be an array, got `+
+        throw new ValidationError('URL list must be an array, got '+
             `${typeof urls}`);
     if (urls.length==0)
         throw new ValidationError('URL list cannot be empty');
     if (urls.length>max_urls)
-        throw new ValidationError(`URL list cannot contain more than `+
+        throw new ValidationError('URL list cannot contain more than '+
             `${max_urls} URLs`);
-    urls.forEach((url, i)=>{
+    urls.forEach((url,i)=>{
         try {
             validate_url(url);
         } catch(e){
@@ -120,9 +120,9 @@ function validate_url_list(urls, max_urls = 100){
 
 function validate_search_engine(search_engine){
     if (typeof search_engine!='string')
-        throw new ValidationError(`Search engine must be a string, got `+
+        throw new ValidationError('Search engine must be a string, got '+
             `${typeof search_engine}`);
-    const valid_engines = ['google', 'bing', 'yandex'];
+    const valid_engines = ['google','bing','yandex'];
     const normalized_engine = search_engine.trim().toLowerCase();
     if (!valid_engines.includes(normalized_engine))
         throw new ValidationError(`Invalid search engine '${search_engine}'. `+
@@ -143,7 +143,7 @@ function validate_query(query){
         if (query.length>50)
             throw new ValidationError('Query list cannot contain more than '+
                 '50 queries');
-        query.forEach((q, i)=>{
+        query.forEach((q,i)=>{
             if (typeof q!='string')
                 throw new ValidationError(`Query at index ${i} must be a `+
                     `string, got ${typeof q}`);
@@ -155,26 +155,26 @@ function validate_query(query){
                     '2048 characters');
         });
     } else
-        throw new ValidationError(`Query must be a string or array of `+
+        throw new ValidationError('Query must be a string or array of '+
             `strings, got ${typeof query}`);
 }
 
 function validate_response_format(response_format){
     if (typeof response_format!='string')
-        throw new ValidationError(`Response format must be a string, got `+
+        throw new ValidationError('Response format must be a string, got '+
             `${typeof response_format}`);
-    const valid_formats = ['json', 'raw'];
+    const valid_formats = ['json','raw'];
     const normalized_format = response_format.trim().toLowerCase();
     if (!valid_formats.includes(normalized_format))
-        throw new ValidationError(`Invalid response format `+
+        throw new ValidationError('Invalid response format '+
             `'${response_format}'. Valid options: ${valid_formats.join(', ')}`);
 }
 
 function validate_http_method(method){
     if (typeof method!='string')
-        throw new ValidationError(`HTTP method must be a string, got `+
+        throw new ValidationError('HTTP method must be a string, got '+
             `${typeof method}`);
-    const valid_methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
+    const valid_methods = ['GET','POST','PUT','DELETE','PATCH'];
     const normalized_method = method.trim().toUpperCase();
     if (!valid_methods.includes(normalized_method))
         throw new ValidationError(`Invalid HTTP method '${method}'. Valid `+

@@ -11,7 +11,7 @@ const {
 } = require('./exceptions/errors.js');
 
 const E = module.exports;
-const VERSION = '1.0.0';
+const VERSION = '1.1.0';
 
 E.bdclient = bdclient;
 E.BrightDataError = BrightDataError;

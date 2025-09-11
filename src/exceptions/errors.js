@@ -38,7 +38,7 @@ class NetworkError extends BrightDataError {
 }
 
 class APIError extends BrightDataError {
-    constructor(message, status_code = null, response_text = null){
+    constructor(message,status_code = null,response_text = null){
         super(message);
         this.name = 'APIError';
         this.status_code = status_code;

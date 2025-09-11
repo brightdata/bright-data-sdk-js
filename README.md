@@ -11,23 +11,23 @@ For a quick start, you can try running our example files in this repository.
 - **Web Scraping**: Scrape websites using Bright Data Web Unlocker API with proxy support
 - **Search Engine Results**: Perform web searches using Bright Data SERP API
 - **Multiple Search Engines**: Support for Google, Bing, and Yandex
-- **Parallel Processing**: Concurrent processing for multiple URLs or queries
+- **Parallel Processing**: Concurrent processing for multiple URLs or queries with synchronous API
 - **Robust Error Handling**: Comprehensive error handling with retry logic
 - **Zone Management**: Automatic zone creation and management
 - **Multiple Output Formats**: JSON, raw HTML, markdown, and more
 
 ## Installation
 
-Install the package using npm:
+Install directly from GitHub:
 
 ```bash
-npm install brightdata
+npm install brightdata/bright-data-sdk-js
 ```
 
 Or using yarn:
 
 ```bash
-yarn add brightdata
+yarn add brightdata/bright-data-sdk-js
 ```
 
 ## Quick Start
@@ -59,56 +59,57 @@ const client = new bdclient({
 ### 2. Scrape Websites
 
 ```javascript
-(async () => {
-    // Single URL
-    const result = await client.scrape('https://example.com');
-    
-    // Multiple URLs (parallel processing)
-    const urls = ['https://example1.com', 'https://example2.com', 'https://example3.com'];
-    const results = await client.scrape(urls);
-    
-    // Custom options
-    const result = await client.scrape('https://example.com', {
-        response_format: 'raw',
-        country: 'gb',
-        data_format: 'screenshot'
-    });
-})();
+// Single URL
+const result = client.scrape('https://example.com');
+console.log(result);
+
+// Multiple URLs (parallel processing)
+const urls = ['https://example1.com', 'https://example2.com', 'https://example3.com'];
+const results = client.scrape(urls);
+console.log(results);
+
+// Custom options
+const result = client.scrape('https://example.com', {
+    response_format: 'raw',
+    country: 'gb',
+    data_format: 'screenshot'
+});
+console.log(result);
 ```
 
 ### 3. Search Engine Results
 
 ```javascript
-(async () => {
-    // Single search query
-    const result = await client.search('pizza restaurants');
-    
-    // Multiple queries (parallel processing)
-    const queries = ['pizza', 'restaurants', 'delivery'];
-    const results = await client.search(queries);
-    
-    // Different search engines
-    const result = await client.search('pizza', {
-        search_engine: 'google' // can also be 'yandex' or 'bing'
-    });
-    
-    // Custom options
-    const results = await client.search(['pizza', 'sushi'], {
-        country: 'gb',
-        response_format: 'raw'
-    });
-})();
+// Single search query
+const result = client.search('pizza restaurants');
+console.log(result);
+
+// Multiple queries (parallel processing)
+const queries = ['pizza', 'restaurants', 'delivery'];
+const results = client.search(queries);
+console.log(results);
+
+// Different search engines
+const result = client.search('pizza', {
+    search_engine: 'google' // can also be 'yandex' or 'bing'
+});
+console.log(result);
+
+// Custom options
+const results = client.search(['pizza', 'sushi'], {
+    country: 'gb',
+    response_format: 'raw'
+});
+console.log(results);
 ```
 
 ### 4. Download Content
 
 ```javascript
-(async () => {
-    // Download scraped content
-    const data = await client.scrape('https://example.com');
-    const filePath = await client.download_content(data, 'results.json', 'json');
-    console.log(`Content saved to: ${filePath}`);
-})();
+// Download scraped content
+const data = client.scrape('https://example.com');
+const filePath = client.download_content(data, 'results.json', 'json');
+console.log(`Content saved to: ${filePath}`);
 ```
 
 ## Configuration
@@ -126,11 +127,9 @@ SERP_ZONE=your_serp_zone                  # Optional
 ### Manage Zones
 
 ```javascript
-(async () => {
-    // List all active zones
-    const zones = await client.list_zones();
-    console.log(`Found ${zones.length} zones`);
-})();
+// List all active zones (not available in sync version)
+const zones = client.list_zones();
+console.log(`Found ${zones.length} zones`);
 ```
 
 ## API Reference
@@ -193,17 +192,16 @@ List all active zones in your Bright Data account.
 The SDK includes built-in input validation and retry logic:
 
 ```javascript
-(async () => {
-    try {
-        const result = await client.scrape('https://example.com');
-    } catch (error) {
-        if (error.name === 'ValidationError') {
-            console.error('Invalid input:', error.message);
-        } else {
-            console.error('API error:', error.message);
-        }
+try {
+    const result = client.scrape('https://example.com');
+    console.log(result);
+} catch (error) {
+    if (error.name === 'ValidationError') {
+        console.error('Invalid input:', error.message);
+    } else {
+        console.error('API error:', error.message);
     }
-})();
+}
 ```
 
 ## Production Features

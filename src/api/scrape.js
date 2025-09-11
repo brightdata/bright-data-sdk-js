@@ -2,12 +2,13 @@
 
 const request = require('sync-request');
 const {
+    validateUrl,
     validateZoneName,
     validateCountryCode,
     validateTimeout,
-    validateSearchEngine,
-    validateQuery,
+    validateUrlList,
     validateResponseFormat,
+    validateHttpMethod,
     getLogger,
     logRequest,
     safeJsonParse,
@@ -18,9 +19,9 @@ const {ValidationError,APIError,AuthenticationError} =
     require('../exceptions/errors.js');
 
 const E = module.exports;
-const logger = getLogger('api.search');
+const logger = getLogger('api.scraper');
 
-class SearchAPI {
+class WebScraper {
     constructor(api_token,default_timeout = 30*1000,max_retries = 3,
         retry_backoff = 1.5){
         this.api_token = api_token;
@@ -29,67 +30,45 @@ class SearchAPI {
         this.retry_backoff = retry_backoff;
     }
     
-    search(query,zone,opt = {}){
+    scrape(url,zone,opt = {}){
         const {
-            search_engine = 'google',
             response_format = 'raw',
+            method = 'GET',
             country = '',
             timeout = null
         } = opt;
         
-        if (Array.isArray(query)){
-            validateQuery(query);
-            validateSearchEngine(search_engine);
-            validateZoneName(zone);
-            validateResponseFormat(response_format);
-            validateCountryCode(country);
-            validateTimeout(timeout || this.default_timeout);
-            
-            logger.info(`Starting batch search operation for ${query.length} queries`);
-            return this._search_batch(query,zone,opt);
+        if (Array.isArray(url)){
+            validateUrlList(url);
+            logger.info(`Starting batch scraping operation for ${url.length} URLs`);
+            return this._scrape_batch(url,zone,opt);
         }
         
-        if (typeof query !== 'string' || query.trim() === '') {
-            throw new ValidationError('Query must be a non-empty string');
-        }
+        validateUrl(url);
         validateZoneName(zone);
-        validateSearchEngine(search_engine);
         validateResponseFormat(response_format);
+        validateHttpMethod(method);
         validateCountryCode(country);
         validateTimeout(timeout || this.default_timeout);
         
-        logger.info(`Starting single query search: ${query}`);
-        return this._search_single(query,zone,opt);
+        logger.info(`Starting single URL scraping: ${url}`);
+        return this._scrape_single(url,zone,opt);
     }
     
-    _search_single(query,zone,opt){
+    _scrape_single(url,zone,opt){
         const {
-            search_engine = 'google',
             response_format = 'raw',
+            method = 'GET',
             country = '',
             data_format = 'markdown',
             timeout = null
         } = opt;
         
-        const encoded_query = encodeURIComponent(query.trim());
-        let search_url;
-        switch (search_engine.toLowerCase()){
-        case 'bing':
-            search_url = `https://www.bing.com/search?q=${encoded_query}`;
-            break;
-        case 'yandex':
-            search_url = `https://yandex.com/search/?text=${encoded_query}`;
-            break;
-        case 'google':
-        default:
-            search_url = `https://www.google.com/search?q=${encoded_query}`;
-        }
-        
         const request_data = {
-            url:search_url,
+            url,
             zone,
             format:response_format,
-            method:'GET',
+            method:method.toUpperCase(),
             country:country.toLowerCase(),
             data_format
         };
@@ -125,7 +104,7 @@ class SearchAPI {
                 if (response.statusCode === 400) {
                     throw new ValidationError(`Bad request: ${response_data}`);
                 }
-                throw new APIError(`Search failed: HTTP ${response.statusCode}`, 
+                throw new APIError(`Scraping failed: HTTP ${response.statusCode}`, 
                     response.statusCode,response_data);
             }
             
@@ -139,41 +118,27 @@ class SearchAPI {
                 e instanceof APIError) {
                 throw e;
             }
-            throw new APIError(`Search failed: ${e.message}`);
+            throw new APIError(`Scraping failed: ${e.message}`);
         }
     }
     
-    async _search_batch_async(queries,zone,opt) {
-        logger.info(`Processing ${queries.length} queries in parallel`);
+    async _scrape_batch_async(urls,zone,opt) {
+        logger.info(`Processing ${urls.length} URLs in parallel`);
         
-        // Create all fetch requests (same pattern as successful scraper)
-        const requests = queries.map((query) => {
+        // Create all fetch requests (exact pattern from successful test-promise-all.js)
+        const requests = urls.map((url) => {
             const {
-                search_engine = 'google',
                 response_format = 'json',
+                method = 'GET',
                 country = '',
                 data_format = 'markdown'
             } = opt;
             
-            const encoded_query = encodeURIComponent(query.trim());
-            let search_url;
-            switch (search_engine.toLowerCase()){
-            case 'bing':
-                search_url = `https://www.bing.com/search?q=${encoded_query}`;
-                break;
-            case 'yandex':
-                search_url = `https://yandex.com/search/?text=${encoded_query}`;
-                break;
-            case 'google':
-            default:
-                search_url = `https://www.google.com/search?q=${encoded_query}`;
-            }
-            
             const requestBody = {
                 zone:zone,
-                url:search_url,
+                url:url,
                 format:response_format,
-                method:'GET',
+                method:method.toUpperCase(),
                 data_format:data_format
             };
             
@@ -192,18 +157,18 @@ class SearchAPI {
         });
         
         try {
-            // Wait for all requests in parallel
+            // Wait for all requests in parallel (exact pattern from test-promise-all.js)
             const responses = await Promise.all(requests);
             
             // Process all responses
             const results = [];
             for (let i = 0; i < responses.length; i++) {
                 const response = responses[i];
-                const query = queries[i];
+                const url = urls[i];
                 
                 try {
                     if (!response.ok) {
-                        results.push({error:`HTTP ${response.status}`,query:query});
+                        results.push({error:`HTTP ${response.status}`,url:url});
                         continue;
                     }
                     
@@ -215,25 +180,25 @@ class SearchAPI {
                     }
                     
                     results.push(data);
-                    logger.debug(`Completed search query: ${query}`);
+                    logger.debug(`Completed scraping URL: ${url}`);
                     
                 } catch (error) {
-                    logger.error(`Failed to process query: ${query} - ${error.message}`);
-                    results.push({error:error.message,query:query});
+                    logger.error(`Failed to process URL: ${url} - ${error.message}`);
+                    results.push({error:error.message,url:url});
                 }
             }
             
-            logger.info(`Completed batch search operation: ${results.length} results`);
+            logger.info(`Completed batch scraping operation: ${results.length} results`);
             return results;
             
         } catch (error) {
-            logger.error(`Batch search failed: ${error.message}`);
-            return queries.map(query => ({error:error.message,query:query}));
+            logger.error(`Batch scraping failed: ${error.message}`);
+            return urls.map(url => ({error:error.message,url:url}));
         }
     }
     
-    _search_batch(queries,zone,opt) {
-        // Automatically use async parallel processing for multiple queries
+    _scrape_batch(urls,zone,opt) {
+        // Automatically use async parallel processing for multiple URLs
         // User calls it as sync, but internally we use async for performance
         const deasync = require('deasync');
         
@@ -242,7 +207,7 @@ class SearchAPI {
         let error = null;
         
         // Call the async parallel version "in the background"
-        this._search_batch_async(queries,zone,opt)
+        this._scrape_batch_async(urls,zone,opt)
             .then(res => {
                 result = res;
                 isDone = true;
@@ -263,4 +228,4 @@ class SearchAPI {
     }
 }
 
-E.SearchAPI = SearchAPI;
+E.WebScraper = WebScraper;

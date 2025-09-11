@@ -1,13 +1,11 @@
 'use strict'; /*jslint node:true*/
 
-const axios = require('axios');
-const fs = require('fs').promises;
+const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
-const {WebScraper} = require('./api/scraper.js');
+const {WebScraper} = require('./api/scrape.js');
 const {SearchAPI} = require('./api/search.js');
-const {ZoneManager} = require('./utils/zone-manager.js');
 const {setupLogging, getLogger} = require('./utils/logging-config.js');
 const {ValidationError, AuthenticationError, APIError} = 
     require('./exceptions/errors.js');
@@ -59,74 +57,54 @@ class bdclient {
         this.MAX_RETRIES = 3;
         this.RETRY_BACKOFF_FACTOR = 1.5;
         this.RETRY_STATUSES = new Set([429, 500, 502, 503, 504]);
-        this.axios_instance = axios.create({
-            timeout: this.DEFAULT_TIMEOUT,
-            maxRedirects: 5,
-            headers: {
-                'Authorization': `Bearer ${this.api_token}`,
-                'Content-Type': 'application/json',
-                'User-Agent': 'brightdata-sdk-js/1.0.0'
-            }
-        });
         logger.info('HTTP client configured with secure headers');
-        this.zone_manager = new ZoneManager(this.axios_instance);
-        this.web_scraper = new WebScraper(this.axios_instance,
+        this.web_scraper = new WebScraper(this.api_token,
             this.DEFAULT_TIMEOUT, this.MAX_RETRIES, this.RETRY_BACKOFF_FACTOR);
-        this.search_api = new SearchAPI(this.axios_instance,
+        this.search_api = new SearchAPI(this.api_token,
             this.DEFAULT_TIMEOUT, this.MAX_RETRIES, this.RETRY_BACKOFF_FACTOR);
-        if (this.auto_create_zones)
-            this.zone_manager.ensureRequiredZones(this.web_unlocker_zone,
-                this.serp_zone);
+        // Zone auto-creation disabled for synchronous version
     }
-    async scrape(url, opt = {}){
+    scrape(url, opt = {}){
         const {
             zone = null,
             response_format = 'raw',
             method = 'GET',
             country = '',
             data_format = 'markdown',
-            async_request = false,
-            max_workers = null,
             timeout = null
         } = opt;
         logger.info('Starting scrape operation for '+
             `${Array.isArray(url) ? url.length : 1} URL(s)`);
         const actual_zone = zone || this.web_unlocker_zone;
         const actual_timeout = timeout || this.DEFAULT_TIMEOUT;
-        const actual_max_workers = max_workers || this.DEFAULT_MAX_WORKERS;
-        return await this.web_scraper.scrape(url, actual_zone, {
+        return this.web_scraper.scrape(url, actual_zone, {
             response_format,
             method,
             country,
             data_format,
-            async_request,
-            max_workers: actual_max_workers,
             timeout: actual_timeout
         });
     }
-    async search(query, opt = {}){
+    search(query, opt = {}){
         const {
             zone = null,
             search_engine = 'google',
             response_format = 'raw',
             country = '',
-            max_workers = null,
             timeout = null
         } = opt;
         logger.info('Starting search operation for '+
             `${Array.isArray(query) ? query.length : 1} query/queries`);
         const actual_zone = zone || this.serp_zone;
         const actual_timeout = timeout || this.DEFAULT_TIMEOUT;
-        const actual_max_workers = max_workers || this.DEFAULT_MAX_WORKERS;
-        return await this.search_api.search(query, actual_zone, {
+        return this.search_api.search(query, actual_zone, {
             search_engine,
             response_format,
             country,
-            max_workers: actual_max_workers,
             timeout: actual_timeout
         });
     }
-    async download_content(content, filename = null, format = 'json'){
+    download_content(content, filename = null, format = 'json'){
         logger.info(`Starting content download in ${format} format`);
         if (!filename){
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -155,13 +133,13 @@ class bdclient {
         default:
             data_to_write = JSON.stringify(content, null, 2);
         }
-        await fs.writeFile(filename, data_to_write, 'utf8');
+        fs.writeFileSync(filename, data_to_write, 'utf8');
         logger.info(`Content successfully saved to: ${filename}`);
         return path.resolve(filename);
     }
-    async list_zones(){
-        logger.info('Fetching list of active zones');
-        return await this.zone_manager.list_zones();
+    list_zones(){
+        logger.info('Zone listing not available in synchronous version');
+        return [];
     }
 }
 

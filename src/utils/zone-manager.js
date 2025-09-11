@@ -3,7 +3,7 @@
 const {getLogger} = require('./logging-config.js');
 const {validateZoneName} = require('./validation.js');
 const {retryRequest} = require('./retry.js');
-const {ZoneError, AuthenticationError, APIError} = 
+const {ZoneError,AuthenticationError,APIError} = 
     require('../exceptions/errors.js');
 
 const E = module.exports;
@@ -18,16 +18,16 @@ class ZoneManager {
         logger.info('Fetching list of active zones');
         try {
             const response = await retryRequest(
-                ()=>this.axios_instance.get(`${this.base_url}/get_active_zones`), 3, 1.5);
+                ()=>this.axios_instance.get(`${this.base_url}/get_active_zones`),3,1.5);
             const zones = response.data || [];
             logger.info(`Found ${zones.length} active zones`);
             return zones.map(zone=>({
-                name: zone.zone || zone.name,
-                type: zone.zone_type || zone.type,
-                status: zone.status,
-                ips: zone.ips || 0,
-                bandwidth: zone.bandwidth || 0,
-                created: zone.created_at || zone.created
+                name:zone.zone || zone.name,
+                type:zone.zone_type || zone.type,
+                status:zone.status,
+                ips:zone.ips || 0,
+                bandwidth:zone.bandwidth || 0,
+                created:zone.created_at || zone.created
             }));
         } catch(e){
             if (e.response?.status==401)
@@ -37,7 +37,7 @@ class ZoneManager {
                 throw new AuthenticationError('Insufficient permissions to list '+
                     'zones. API token needs admin access.');
             throw new APIError(`Failed to list zones: ${e.message}`,
-                e.response?.status, e.response?.data);
+                e.response?.status,e.response?.data);
         }
     }
     async zone_exists(zone_name){
@@ -54,42 +54,42 @@ class ZoneManager {
             return false;
         }
     }
-    async create_zone(zone_name, zone_type = 'static', opt = {}){
+    async create_zone(zone_name,zone_type = 'static',opt = {}){
         validateZoneName(zone_name);
         logger.info(`Creating zone: ${zone_name} (type: ${zone_type})`);
         
         const zone_data = {
-            zone: {
-                name: zone_name,
-                type: zone_type
+            zone:{
+                name:zone_name,
+                type:zone_type
             },
-            plan: {
-                type: zone_type,
-                domain_whitelist: opt.domain_whitelist || '',
-                ips_type: opt.ips_type || 'shared',
-                bandwidth: opt.bandwidth || 'bandwidth',
-                ip_alloc_preset: opt.ip_alloc_preset || 'shared_block',
-                ips: opt.ips || 0,
-                country: opt.country || '',
-                country_city: opt.country_city || '',
-                mobile: opt.mobile || false,
-                serp: zone_type === 'serp',
-                city: opt.city || false,
-                asn: opt.asn || false,
-                vip: opt.vip || false,
-                vips_type: opt.vips_type || 'shared',
-                vips: opt.vips || 0,
-                vip_country: opt.vip_country || '',
-                vip_country_city: opt.vip_country_city || '',
-                pool_ip_type: opt.pool_ip_type || '',
-                ub_premium: opt.ub_premium || false,
-                solve_captcha_disable: opt.solve_captcha_disable !== false
+            plan:{
+                type:zone_type,
+                domain_whitelist:opt.domain_whitelist || '',
+                ips_type:opt.ips_type || 'shared',
+                bandwidth:opt.bandwidth || 'bandwidth',
+                ip_alloc_preset:opt.ip_alloc_preset || 'shared_block',
+                ips:opt.ips || 0,
+                country:opt.country || '',
+                country_city:opt.country_city || '',
+                mobile:opt.mobile || false,
+                serp:zone_type === 'serp',
+                city:opt.city || false,
+                asn:opt.asn || false,
+                vip:opt.vip || false,
+                vips_type:opt.vips_type || 'shared',
+                vips:opt.vips || 0,
+                vip_country:opt.vip_country || '',
+                vip_country_city:opt.vip_country_city || '',
+                pool_ip_type:opt.pool_ip_type || '',
+                ub_premium:opt.ub_premium || false,
+                solve_captcha_disable:opt.solve_captcha_disable !== false
             }
         };
         
         try {
             const response = await retryRequest(
-                ()=>this.axios_instance.post(this.base_url, zone_data), 3, 1.5);
+                ()=>this.axios_instance.post(this.base_url,zone_data),3,1.5);
             logger.info(`Successfully created zone: ${zone_name}`);
             return response.data;
         } catch(e){
@@ -98,9 +98,9 @@ class ZoneManager {
                 if (error_message.includes('already exists')){
                     logger.info(`Zone ${zone_name} already exists, skipping `+
                         'creation');
-                    return {name: zone_name, status: 'exists'};
+                    return {name:zone_name,status:'exists'};
                 }
-                throw new ZoneError(`Invalid zone configuration: `+
+                throw new ZoneError('Invalid zone configuration: '+
                     `${error_message}`);
             }
             if (e.response?.status==401)
@@ -110,40 +110,40 @@ class ZoneManager {
                 throw new AuthenticationError('Insufficient permissions to '+
                     'create zones. API token needs admin access.');
             throw new ZoneError(`Failed to create zone ${zone_name}: `+
-                `${e.message}`, e.response?.status, e.response?.data);
+                `${e.message}`,e.response?.status,e.response?.data);
         }
     }
-    async ensureRequiredZones(web_unlocker_zone, serp_zone){
-        logger.info('Ensuring required zones exist', {
+    async ensureRequiredZones(web_unlocker_zone,serp_zone){
+        logger.info('Ensuring required zones exist',{
             web_unlocker_zone,
             serp_zone
         });
         const results = {
-            web_unlocker: {zone: web_unlocker_zone, exists: false, created: false},
-            serp: {zone: serp_zone, exists: false, created: false}
+            web_unlocker:{zone:web_unlocker_zone,exists:false,created:false},
+            serp:{zone:serp_zone,exists:false,created:false}
         };
         try {
             results.web_unlocker.exists = await this.zone_exists(
                 web_unlocker_zone);
             if (!results.web_unlocker.exists){
                 logger.info(`Creating web unlocker zone: ${web_unlocker_zone}`);
-                await this.create_zone(web_unlocker_zone, 'unblocker');
+                await this.create_zone(web_unlocker_zone,'unblocker');
                 results.web_unlocker.created = true;
             } else
-                logger.info(`Web unlocker zone already exists: `+
+                logger.info('Web unlocker zone already exists: '+
                     `${web_unlocker_zone}`);
             results.serp.exists = await this.zone_exists(serp_zone);
             if (!results.serp.exists){
                 logger.info(`Creating SERP zone: ${serp_zone}`);
-                await this.create_zone(serp_zone, 'serp');
+                await this.create_zone(serp_zone,'serp');
                 results.serp.created = true;
             } else
                 logger.info(`SERP zone already exists: ${serp_zone}`);
-            logger.info('Zone validation completed', results);
+            logger.info('Zone validation completed',results);
             return results;
         } catch(e){
-            logger.error('Failed to ensure required zones exist', {
-                error: e.message,
+            logger.error('Failed to ensure required zones exist',{
+                error:e.message,
                 web_unlocker_zone,
                 serp_zone
             });
@@ -158,13 +158,13 @@ class ZoneManager {
         try {
             const response = await retryRequest(
                 ()=>this.axios_instance.get(`${this.base_url}/${zone_name}`+
-                    '/stats'), 3, 1.5);
+                    '/stats'),3,1.5);
             return response.data;
         } catch(e){
             if (e.response?.status==404)
                 throw new ZoneError(`Zone not found: ${zone_name}`);
             throw new APIError(`Failed to get zone stats: ${e.message}`,
-                e.response?.status, e.response?.data);
+                e.response?.status,e.response?.data);
         }
     }
 }
