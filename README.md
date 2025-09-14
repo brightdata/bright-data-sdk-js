@@ -30,7 +30,23 @@ Or using yarn:
 yarn add brightdata/bright-data-sdk-js
 ```
 
-## Quick Start
+## Launch your first request
+
+Make sure you have a [Bright Data](https://brightdata.com/) account with an API key, and SDK package downloaded.
+
+In your IDE, paste the following code for a simple scraper:
+```javascript
+const { bdclient } = require('brightdata');
+
+const client = new bdclient({
+    api_token: 'your_api_token_here' // can also be defined as BRIGHTDATA_API_TOKEN in your .env file
+});
+
+const result = client.search('pizza restaurants');
+console.log(result);
+```
+
+## Using functions
 
 ### 1. Initialize the Client
 
