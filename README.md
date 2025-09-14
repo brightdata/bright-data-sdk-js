@@ -32,7 +32,7 @@ yarn add brightdata/bright-data-sdk-js
 
 ## Launch your first request
 
-Make sure you have a [Bright Data](https://brightdata.com/) account with an API key, and SDK package downloaded.
+Make sure you have a [Bright Data](https://brightdata.com/cp/setting/) account with an API key, and SDK package downloaded.
 
 In your IDE, paste the following code for a simple scraper:
 ```javascript
