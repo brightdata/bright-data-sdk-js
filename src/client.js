@@ -121,10 +121,35 @@ class bdclient {
         });
     }
     download_content(content, filename = null, format = 'json'){
+        if (content === null || content === undefined) {
+            throw new ValidationError('Content is required for download');
+        }
+        if (typeof format !== 'string' || format.trim() === '') {
+            throw new ValidationError('Format must be a non-empty string');
+        }
+        const validFormats = ['json', 'csv', 'txt'];
+        if (!validFormats.includes(format.toLowerCase())) {
+            throw new ValidationError(`Format must be one of: ${validFormats.join(', ')}`);
+        }
+
         logger.info(`Starting content download in ${format} format`);
+
+        const contentStr = typeof content === 'string' ? content : JSON.stringify(content);
+        const sizeInBytes = Buffer.byteLength(contentStr, 'utf8');
+        const maxSizeBytes = 100 * 1024 * 1024;
+        if (sizeInBytes > maxSizeBytes) {
+            throw new ValidationError(`Content size (${Math.round(sizeInBytes / 1024 / 1024)}MB) exceeds maximum allowed size (100MB)`);
+        }
+
         if (!filename){
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
             filename = `brightdata_content_${timestamp}.${format}`;
+        } else {
+            filename = filename.replace(/[<>:"/\\|?*]/g, '_').replace(/\.\./g, '_');
+            const ext = path.extname(filename);
+            if (!ext) {
+                filename += `.${format}`;
+            }
         }
         let data_to_write;
         switch (format.toLowerCase()){
@@ -132,26 +157,78 @@ class bdclient {
             data_to_write = JSON.stringify(content, null, 2);
             break;
         case 'csv':
-            if (Array.isArray(content) && content.length>0 &&
-                typeof content[0]=='object'){
-                const headers = Object.keys(content[0]).join(',');
-                const rows = content.map(obj=>Object.values(obj).map(val=>
-                    typeof val=='string' ? `"${val.replace(/"/g, '""')}"` : val
-                ).join(','));
-                data_to_write = [headers, ...rows].join('\n');
-            } else
+            if (Array.isArray(content) && content.length > 0 &&
+                typeof content[0] === 'object' && content[0] !== null) {
+                try {
+                    const headers = Object.keys(content[0]).join(',');
+                    const rows = content.map(obj => {
+                        if (typeof obj !== 'object' || obj === null) {
+                            throw new ValidationError('All items in array must be objects for CSV format');
+                        }
+                        return Object.values(obj).map(val => {
+                            if (val === null || val === undefined) {
+                                return '';
+                            }
+                            const strVal = String(val);
+                            if (strVal.includes(',') || strVal.includes('"') || strVal.includes('\n')) {
+                                return `"${strVal.replace(/"/g, '""')}"`;
+                            }
+                            return strVal;
+                        }).join(',');
+                    });
+                    data_to_write = [headers, ...rows].join('\n');
+                } catch (csvError) {
+                    logger.warning(`CSV conversion failed: ${csvError.message}, falling back to JSON`);
+                    data_to_write = JSON.stringify(content, null, 2);
+                }
+            } else {
+                logger.warning('Content not suitable for CSV format, using JSON instead');
                 data_to_write = JSON.stringify(content, null, 2);
+            }
             break;
         case 'txt':
-            data_to_write = typeof content=='string' ? content :
-                JSON.stringify(content, null, 2);
+            if (typeof content=='string') {
+                data_to_write = content;
+            } else if (Array.isArray(content) && content.every(item => typeof item === 'string')) {
+                data_to_write = content.map((item, index) =>
+                    `--- RESULT ${index + 1} ---\n\n${item}`
+                ).join('\n\n');
+            } else {
+                data_to_write = JSON.stringify(content, null, 2);
+            }
             break;
         default:
             data_to_write = JSON.stringify(content, null, 2);
         }
-        fs.writeFileSync(filename, data_to_write, 'utf8');
-        logger.info(`Content successfully saved to: ${filename}`);
-        return path.resolve(filename);
+
+        try {
+            const dir = path.dirname(filename);
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir, { recursive: true });
+            }
+
+            fs.writeFileSync(filename, data_to_write, 'utf8');
+
+            if (!fs.existsSync(filename)) {
+                throw new Error('File was not created successfully');
+            }
+
+            const stats = fs.statSync(filename);
+            logger.info(`Content successfully saved to: ${filename} (${stats.size} bytes)`);
+            return path.resolve(filename);
+
+        } catch (writeError) {
+            logger.error(`Failed to write file: ${writeError.message}`);
+            if (writeError.code === 'EACCES') {
+                throw new Error(`Permission denied: Cannot write to ${filename}`);
+            } else if (writeError.code === 'ENOSPC') {
+                throw new Error('Insufficient disk space to write file');
+            } else if (writeError.code === 'EMFILE' || writeError.code === 'ENFILE') {
+                throw new Error('Too many open files, cannot write file');
+            } else {
+                throw new Error(`Failed to write file ${filename}: ${writeError.message}`);
+            }
+        }
     }
     _ensure_zones(){
         try {

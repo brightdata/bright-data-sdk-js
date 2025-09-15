@@ -3,10 +3,7 @@ const {bdclient} = require('../src/index.js');
 
 const client = new bdclient(); // Place your API key in the bdclient or .env file
 
-const queries = [
-    'Burger',
-    'pizza'
-];
+const urls = ['https://example.com', 'https://httpbin.org'];
+const result = client.scrape(urls);
 
-const result = client.search(queries);
-console.log(result);
+client.download_content(result, 'search_results.txt', 'txt');

@@ -1,10 +1,8 @@
 require('dotenv').config();
 const {bdclient} = require('../src/index.js');
 
-const client = new bdclient();
-const urls = [
-    'https://example.com',
-    'https://httpbin.org'
-];
-const result = client.scrape(urls);
-console.log(result);
+const client = new bdclient(); // Place your API key in the bdclient or .env file
+
+const results = client.scrape('https://example.com');
+
+console.log(results);

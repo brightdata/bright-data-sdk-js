@@ -94,7 +94,7 @@ class WebScraper {
                     'User-Agent':USER_AGENT
                 }
             });
-            
+
             const response_data = response.getBody('utf8');
             validateResponseSize(response_data);
             
@@ -105,7 +105,7 @@ class WebScraper {
                 if (response.statusCode === 400) {
                     throw new ValidationError(`Bad request: ${response_data}`);
                 }
-                throw new APIError(`Scraping failed: HTTP ${response.statusCode}`, 
+                throw new APIError(`Scraping failed: HTTP ${response.statusCode}`,
                     response.statusCode,response_data);
             }
             
@@ -129,7 +129,7 @@ class WebScraper {
         // Create all fetch requests (exact pattern from successful test-promise-all.js)
         const requests = urls.map((url) => {
             const {
-                response_format = 'json',
+                response_format = 'raw',
                 method = 'GET',
                 country = '',
                 data_format = 'markdown'
@@ -199,33 +199,83 @@ class WebScraper {
     }
     
     _scrape_batch(urls,zone,opt) {
-        // Automatically use async parallel processing for multiple URLs
-        // User calls it as sync, but internally we use async for performance
-        const deasync = require('deasync');
-        
-        let isDone = false;
-        let result = null;
-        let error = null;
-        
-        // Call the async parallel version "in the background"
-        this._scrape_batch_async(urls,zone,opt)
-            .then(res => {
-                result = res;
-                isDone = true;
-            })
-            .catch(err => {
-                error = err;
-                isDone = true;
+        // Optimize batch processing using Promise.allSettled for better performance
+        logger.info(`Processing ${urls.length} URLs with optimized parallel requests`);
+
+        const {
+            response_format = 'raw',
+            method = 'GET',
+            country = '',
+            data_format = 'markdown',
+            timeout = null
+        } = opt;
+
+        // Create all requests at once using native fetch for better performance
+        const requests = urls.map(url => {
+            const requestBody = {
+                zone:zone,
+                url:url,
+                format:response_format,
+                method:method.toUpperCase(),
+                data_format:data_format
+            };
+
+            if (country) {
+                requestBody.country = country.toLowerCase();
+            }
+
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(),timeout || this.default_timeout);
+
+            return fetch(REQUEST_API_URL,{
+                method:'POST',
+                headers:{
+                    'Authorization':`Bearer ${this.api_token}`,
+                    'Content-Type':'application/json',
+                    'User-Agent':USER_AGENT
+                },
+                body:JSON.stringify(requestBody),
+                signal:controller.signal
+            }).then(async response => {
+                clearTimeout(timeoutId);
+                if (!response.ok) {
+                    return {error:`HTTP ${response.status}`,url:url};
+                }
+
+                let data;
+                if (response_format === 'json') {
+                    data = await response.json();
+                } else {
+                    data = await response.text();
+                }
+                return data;
+            }).catch(error => {
+                clearTimeout(timeoutId);
+                return {
+                    error:error.message,
+                    url:url
+                };
             });
-        
-        // Wait synchronously for the async operation to complete
+        });
+
+        // Use synchronous waiting with faster implementation
+        const deasync = require('deasync');
+        let isDone = false;
+        let results = null;
+
+        Promise.all(requests).then(res => {
+            results = res;
+            isDone = true;
+        }).catch(err => {
+            results = urls.map(url => ({error:err.message,url:url}));
+            isDone = true;
+        });
+
         deasync.loopWhile(() => !isDone);
-        
-        if (error) {
-            throw error;
-        }
-        
-        return result;
+
+        logger.info(`Completed optimized batch scraping: ${results.length} results`);
+        return results;
     }
 }
 

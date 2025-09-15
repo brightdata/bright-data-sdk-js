@@ -15,7 +15,7 @@ const {
     validateResponseSize
 } = require('../utils/index.js');
 
-const {ValidationError,APIError,AuthenticationError} = 
+const {ValidationError,APIError,AuthenticationError} =
     require('../exceptions/errors.js');
 
 const E = module.exports;
@@ -38,21 +38,19 @@ class SearchAPI {
             timeout = null
         } = opt;
         
-        if (Array.isArray(query)){
+        if (Array.isArray(query)) {
             validateQuery(query);
             validateSearchEngine(search_engine);
             validateZoneName(zone);
             validateResponseFormat(response_format);
             validateCountryCode(country);
             validateTimeout(timeout || this.default_timeout);
-            
             logger.info(`Starting batch search operation for ${query.length} queries`);
             return this._search_batch(query,zone,opt);
         }
         
-        if (typeof query !== 'string' || query.trim() === '') {
+        if (typeof query!=='string' || query.trim()=='')
             throw new ValidationError('Query must be a non-empty string');
-        }
         validateZoneName(zone);
         validateSearchEngine(search_engine);
         validateResponseFormat(response_format);
@@ -74,7 +72,7 @@ class SearchAPI {
         
         const encoded_query = encodeURIComponent(query.trim());
         let search_url;
-        switch (search_engine.toLowerCase()){
+        switch (search_engine.toLowerCase()) {
         case 'bing':
             search_url = `https://www.bing.com/search?q=${encoded_query}`;
             break;
@@ -96,9 +94,9 @@ class SearchAPI {
         };
         
         // Clean up empty values
-        Object.keys(request_data).forEach(key => {
-            if (request_data[key] === '' || request_data[key] === null || 
-                request_data[key] === undefined) {
+        Object.keys(request_data).forEach(key=>{
+            if (request_data[key]==='' || request_data[key]===null ||
+                request_data[key]===undefined) {
                 delete request_data[key];
             }
         });
@@ -119,24 +117,21 @@ class SearchAPI {
             const response_data = response.getBody('utf8');
             validateResponseSize(response_data);
             
-            if (response.statusCode >= 400) {
-                if (response.statusCode === 401) {
+            if (response.statusCode>=400) {
+                if (response.statusCode==401)
                     throw new AuthenticationError('Invalid API token or insufficient permissions');
-                }
-                if (response.statusCode === 400) {
+                if (response.statusCode==400)
                     throw new ValidationError(`Bad request: ${response_data}`);
-                }
-                throw new APIError(`Search failed: HTTP ${response.statusCode}`, 
+                throw new APIError(`Search failed: HTTP ${response.statusCode}`,
                     response.statusCode,response_data);
             }
             
-            if (response_format === 'json') {
+            if (response_format=='json')
                 return safeJsonParse(response_data);
-            }
             return response_data;
             
-        } catch(e) {
-            if (e instanceof AuthenticationError || e instanceof ValidationError || 
+        } catch(e){
+            if (e instanceof AuthenticationError || e instanceof ValidationError ||
                 e instanceof APIError) {
                 throw e;
             }
@@ -144,16 +139,17 @@ class SearchAPI {
         }
     }
     
-    async _search_batch_async(queries,zone,opt) {
+    async _search_batch_async(queries,zone,opt){
         logger.info(`Processing ${queries.length} queries in parallel`);
         
         // Create all fetch requests (same pattern as successful scraper)
-        const requests = queries.map((query) => {
+        const requests = queries.map(query=>{
             const {
                 search_engine = 'google',
                 response_format = 'json',
                 country = '',
-                data_format = 'markdown'
+                data_format = 'markdown',
+                timeout = null
             } = opt;
             
             const encoded_query = encodeURIComponent(query.trim());
@@ -182,13 +178,24 @@ class SearchAPI {
                 requestBody.country = country.toLowerCase();
             }
             
-            return fetch('https://api.brightdata.com/request',{
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(),timeout || this.default_timeout);
+
+            return fetch(REQUEST_API_URL,{
                 method:'POST',
                 headers:{
                     'Authorization':`Bearer ${this.api_token}`,
-                    'Content-Type':'application/json'
+                    'Content-Type':'application/json',
+                    'User-Agent':USER_AGENT
                 },
-                body:JSON.stringify(requestBody)
+                body:JSON.stringify(requestBody),
+                signal:controller.signal
+            }).then(response => {
+                clearTimeout(timeoutId);
+                return response;
+            }).catch(error => {
+                clearTimeout(timeoutId);
+                throw error;
             });
         });
         
@@ -234,33 +241,93 @@ class SearchAPI {
     }
     
     _search_batch(queries,zone,opt) {
-        // Automatically use async parallel processing for multiple queries
-        // User calls it as sync, but internally we use async for performance
-        const deasync = require('deasync');
-        
-        let isDone = false;
-        let result = null;
-        let error = null;
-        
-        // Call the async parallel version "in the background"
-        this._search_batch_async(queries,zone,opt)
-            .then(res => {
-                result = res;
-                isDone = true;
-            })
-            .catch(err => {
-                error = err;
-                isDone = true;
+        logger.info(`Processing ${queries.length} queries with optimized parallel requests`);
+
+        const {
+            search_engine = 'google',
+            response_format = 'raw',
+            country = '',
+            data_format = 'markdown',
+            timeout = null
+        } = opt;
+
+        const requests = queries.map(query => {
+            const encoded_query = encodeURIComponent(query.trim());
+            let search_url;
+            switch (search_engine.toLowerCase()){
+            case 'bing':
+                search_url = `https://www.bing.com/search?q=${encoded_query}`;
+                break;
+            case 'yandex':
+                search_url = `https://yandex.com/search/?text=${encoded_query}`;
+                break;
+            case 'google':
+            default:
+                search_url = `https://www.google.com/search?q=${encoded_query}`;
+            }
+
+            const requestBody = {
+                zone:zone,
+                url:search_url,
+                format:response_format,
+                method:'GET',
+                data_format:data_format
+            };
+
+            if (country) {
+                requestBody.country = country.toLowerCase();
+            }
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(),timeout || this.default_timeout);
+
+            return fetch(REQUEST_API_URL,{
+                method:'POST',
+                headers:{
+                    'Authorization':`Bearer ${this.api_token}`,
+                    'Content-Type':'application/json',
+                    'User-Agent':USER_AGENT
+                },
+                body:JSON.stringify(requestBody),
+                signal:controller.signal
+            }).then(async response => {
+                clearTimeout(timeoutId);
+                if (!response.ok) {
+                    return {error:`HTTP ${response.status}`,query:query};
+                }
+
+                let data;
+                if (response_format === 'json') {
+                    data = await response.json();
+                } else {
+                    data = await response.text();
+                }
+                return data;
+            }).catch(error => {
+                clearTimeout(timeoutId);
+                return {
+                    error:error.message,
+                    query:query
+                };
             });
-        
-        // Wait synchronously for the async operation to complete
+        });
+
+        const deasync = require('deasync');
+        let isDone = false;
+        let results = null;
+
+        Promise.all(requests).then(res => {
+            results = res;
+            isDone = true;
+        }).catch(err => {
+            results = queries.map(query => ({error:err.message,query:query}));
+            isDone = true;
+        });
+
         deasync.loopWhile(() => !isDone);
-        
-        if (error) {
-            throw error;
-        }
-        
-        return result;
+
+        logger.info(`Completed optimized batch search: ${results.length} results`);
+        return results;
     }
 }
 

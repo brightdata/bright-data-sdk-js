@@ -162,23 +162,23 @@ export interface ZoneInfo {
  * });
  * 
  * // Simple scraping
- * const html = await client.scrape('https://example.com');
+ * const html =  client.scrape('https://example.com');
  * 
  * // Advanced scraping
- * const data = await client.scrape('https://example.com', {
+ * const data =  client.scrape('https://example.com', {
  *     response_format: 'json',
  *     country: 'us',
  *     method: 'GET'
  * });
  * 
  * // Multiple URLs
- * const results = await client.scrape([
+ * const results =  client.scrape([
  *     'https://example.com',
  *     'https://test.com'
  * ], { max_workers: 5 });
  * 
  * // Search operations
- * const searchResults = await client.search('pizza restaurants', {
+ * const searchResults =  client.search('pizza restaurants', {
  *     search_engine: 'google',
  *     country: 'us',
  *     response_format: 'json'
@@ -227,15 +227,15 @@ export declare class bdclient {
      * @example
      * ```javascript
      * // Simple scraping (returns HTML)
-     * const html = await client.scrape('https://example.com');
+     * const html =  client.scrape('https://example.com');
      * 
      * // Get structured JSON data
-     * const data = await client.scrape('https://example.com', {
+     * const data =  client.scrape('https://example.com', {
      *     response_format: 'json'
      * });
      * 
      * // Advanced options
-     * const result = await client.scrape('https://example.com', {
+     * const result =  client.scrape('https://example.com', {
      *     response_format: 'raw',        // 'raw' | 'json'
      *     method: 'GET',                 // 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
      *     country: 'us',                 // 'us' | 'gb' | 'de' | 'jp' etc.
@@ -245,13 +245,13 @@ export declare class bdclient {
      * });
      * 
      * // E-commerce scraping
-     * const productData = await client.scrape('https://amazon.com/dp/B123', {
+     * const productData =  client.scrape('https://amazon.com/dp/B123', {
      *     response_format: 'json',
      *     country: 'us'
      * });
      * ```
      */
-    scrape(url: string, opt?: ScrapeOptions): Promise<any>;
+    scrape(url: string, opt?: ScrapeOptions): string | any;
     
     /**
      * Scrape multiple URLs concurrently using Bright Data Web Unlocker API
@@ -270,10 +270,10 @@ export declare class bdclient {
      *     'https://test.com',
      *     'https://demo.com'
      * ];
-     * const results = await client.scrape(urls);
+     * const results =  client.scrape(urls);
      * 
      * // Advanced batch scraping
-     * const results = await client.scrape(urls, {
+     * const results =  client.scrape(urls, {
      *     response_format: 'json',       // All URLs return JSON
      *     max_workers: 5,                // Process 5 URLs simultaneously
      *     country: 'us',                 // Use US proxies
@@ -286,7 +286,7 @@ export declare class bdclient {
      *     'https://amazon.com/dp/B456',
      *     'https://amazon.com/dp/B789'
      * ];
-     * const products = await client.scrape(productUrls, {
+     * const products =  client.scrape(productUrls, {
      *     response_format: 'json',
      *     max_workers: 3,
      *     country: 'us'
@@ -299,7 +299,7 @@ export declare class bdclient {
      * });
      * ```
      */
-    scrape(urls: string[], opt?: ScrapeOptions): Promise<any[]>;
+    scrape(urls: string[], opt?: ScrapeOptions): any[];
     
     /**
      * Search using a single query via Bright Data SERP API
@@ -313,15 +313,15 @@ export declare class bdclient {
      * @example
      * ```javascript
      * // Simple Google search
-     * const results = await client.search('pizza restaurants');
+     * const results =  client.search('pizza restaurants');
      * 
      * // Structured search results
-     * const data = await client.search('best laptops 2024', {
+     * const data =  client.search('best laptops 2024', {
      *     response_format: 'json'
      * });
      * 
      * // Advanced search options
-     * const results = await client.search('machine learning courses', {
+     * const results =  client.search('machine learning courses', {
      *     search_engine: 'bing',         // 'google' | 'bing' | 'yandex'
      *     country: 'us',                 // 'us' | 'gb' | 'de' | 'jp' etc.
      *     response_format: 'json',       // 'raw' | 'json'
@@ -330,23 +330,23 @@ export declare class bdclient {
      * });
      * 
      * // Different search engines
-     * const googleResults = await client.search('nodejs tutorial', {
+     * const googleResults =  client.search('nodejs tutorial', {
      *     search_engine: 'google',
      *     country: 'us'
      * });
      * 
-     * const bingResults = await client.search('nodejs tutorial', {
+     * const bingResults =  client.search('nodejs tutorial', {
      *     search_engine: 'bing',
      *     country: 'us'
      * });
      * 
-     * const yandexResults = await client.search('nodejs tutorial', {
+     * const yandexResults =  client.search('nodejs tutorial', {
      *     search_engine: 'yandex',
      *     country: 'ru'
      * });
      * ```
      */
-    search(query: string, opt?: SearchOptions): Promise<any>;
+    search(query: string, opt?: SearchOptions): string | any;
     
     /**
      * Search using multiple queries concurrently via Bright Data SERP API
@@ -366,10 +366,10 @@ export declare class bdclient {
      *     'web development bootcamp',
      *     'data science certification'
      * ];
-     * const results = await client.search(queries);
+     * const results =  client.search(queries);
      * 
      * // Advanced batch searching
-     * const results = await client.search(queries, {
+     * const results =  client.search(queries, {
      *     search_engine: 'google',       // Same engine for all queries
      *     response_format: 'json',       // Structured results
      *     max_workers: 3,                // Process 3 queries simultaneously
@@ -383,7 +383,7 @@ export declare class bdclient {
      *     'web scraping tools comparison',
      *     'data extraction software reviews'
      * ];
-     * const marketData = await client.search(competitors, {
+     * const marketData =  client.search(competitors, {
      *     search_engine: 'google',
      *     response_format: 'json',
      *     country: 'us',
@@ -398,14 +398,14 @@ export declare class bdclient {
      * 
      * // Different search engines for comparison
      * const query = 'best restaurants NYC';
-     * const [googleRes, bingRes, yandexRes] = await Promise.all([
+     * const [googleRes, bingRes, yandexRes] =  Promise.all([
      *     client.search([query], { search_engine: 'google' }),
      *     client.search([query], { search_engine: 'bing' }),
      *     client.search([query], { search_engine: 'yandex' })
      * ]);
      * ```
      */
-    search(queries: string[], opt?: SearchOptions): Promise<any[]>;
+    search(queries: string[], opt?: SearchOptions): any[];
     
     /**
      * Download content to a local file
@@ -420,28 +420,28 @@ export declare class bdclient {
      * @example
      * ```javascript
      * // Save scraped data as JSON
-     * const data = await client.scrape('https://example.com');
-     * const filePath = await client.download_content(data, 'scraped_data.json', 'json');
+     * const data =  client.scrape('https://example.com');
+     * const filePath =  client.download_content(data, 'scraped_data.json', 'json');
      * 
      * // Auto-generate filename
-     * const filePath = await client.download_content(data, null, 'json');
+     * const filePath =  client.download_content(data, null, 'json');
      * // Creates: brightdata_content_2024-01-15T10-30-45-123Z.json
      * 
      * // Save as CSV (for array of objects)
-     * const products = await client.scrape(productUrls, { response_format: 'json' });
-     * const csvPath = await client.download_content(products, 'products.csv', 'csv');
+     * const products =  client.scrape(productUrls, { response_format: 'json' });
+     * const csvPath =  client.download_content(products, 'products.csv', 'csv');
      * 
      * // Save as plain text
-     * const html = await client.scrape('https://example.com');
-     * const txtPath = await client.download_content(html, 'page.txt', 'txt');
+     * const html =  client.scrape('https://example.com');
+     * const txtPath =  client.download_content(html, 'page.txt', 'txt');
      * 
      * // Different formats
-     * await client.download_content(data, 'data.json', 'json');  // JSON format
-     * await client.download_content(data, 'data.csv', 'csv');    // CSV format  
-     * await client.download_content(data, 'data.txt', 'txt');    // Text format
+     *  client.download_content(data, 'data.json', 'json');  // JSON format
+     *  client.download_content(data, 'data.csv', 'csv');    // CSV format  
+     *  client.download_content(data, 'data.txt', 'txt');    // Text format
      * ```
      */
-    download_content(content: any, filename?: string | null, format?: 'json' | 'csv' | 'txt'): Promise<string>;
+    download_content(content: any, filename?: string | null, format?: 'json' | 'csv' | 'txt'): string;
     
     /**
      * List all active zones in your Bright Data account
@@ -453,7 +453,7 @@ export declare class bdclient {
      * @example
      * ```javascript
      * // List all zones
-     * const zones = await client.list_zones();
+     * const zones =  client.list_zones();
      * 
      * // Process zone information
      * zones.forEach(zone => {
@@ -476,7 +476,7 @@ export declare class bdclient {
      * console.log(`Active zones: ${activeZones.length}`);
      * ```
      */
-    list_zones(): Promise<ZoneInfo[]>;
+    list_zones(): ZoneInfo[];
 }
 
 export declare class BrightDataError extends Error {}
