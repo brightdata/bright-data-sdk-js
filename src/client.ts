@@ -147,7 +147,7 @@ export class bdclient {
             await this._ensure_zones();
         }
     }
-    scrape(url: string, opt: ScrapeOptions = {}) {
+    scrape(url: string | string[], opt: ScrapeOptions = {}) {
         const {
             zone = null,
             response_format = 'raw',
@@ -172,7 +172,7 @@ export class bdclient {
             timeout: actual_timeout,
         });
     }
-    search(query: string, opt: SearchOptions = {}) {
+    search(query: string | string[], opt: SearchOptions = {}) {
         const {
             zone = null,
             search_engine = 'google',

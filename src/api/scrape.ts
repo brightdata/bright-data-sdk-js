@@ -1,5 +1,4 @@
 import { request } from 'undici';
-import deasync from 'deasync';
 import { REQUEST_API_URL } from '../utils/constants';
 import {
     validateUrl,
@@ -41,7 +40,7 @@ export class WebScraper {
         this.retry_backoff = retry_backoff;
     }
 
-    async scrape(url: string, opt: ScrapeOptions = {}) {
+    async scrape(url: string | string[], opt: ScrapeOptions = {}) {
         const {
             zone,
             response_format = 'raw',
@@ -283,24 +282,20 @@ export class WebScraper {
                 });
         });
 
-        let isDone = false;
         let results = null;
 
-        Promise.all(requests)
+        await Promise.all(requests)
             .then((res) => {
                 results = res;
-                isDone = true;
             })
             .catch((err) => {
                 results = urls.map((url) => ({ error: err.message, url: url }));
-                isDone = true;
             });
-
-        deasync.loopWhile(() => !isDone);
 
         logger.info(
             `Completed optimized batch scraping: ${results.length} results`,
         );
+
         return results;
     }
 }

@@ -1,5 +1,4 @@
 import { request } from 'undici';
-import deasync from 'deasync';
 import { REQUEST_API_URL } from '../utils/constants';
 import {
     validateZoneName,
@@ -41,7 +40,7 @@ export class SearchAPI {
         this.retry_backoff = retry_backoff;
     }
 
-    async search(query: string, opt: SearchOptions = {}) {
+    async search(query: string | string[], opt: SearchOptions = {}) {
         const {
             zone,
             search_engine = 'google',
@@ -157,8 +156,9 @@ export class SearchAPI {
         }
     }
 
-    async _search_batch_async(queries: string[], opt: SearchOptions = {}) {
+    async _search_batch(queries: string[], opt: SearchOptions = {}) {
         logger.info(`Processing ${queries.length} queries in parallel`);
+
         const {
             zone,
             search_engine = 'google',
@@ -265,108 +265,5 @@ export class SearchAPI {
                 query: query,
             }));
         }
-    }
-
-    _search_batch(queries: string[], opt: SearchOptions = {}) {
-        logger.info(
-            `Processing ${queries.length} queries with optimized parallel requests`,
-        );
-
-        const {
-            zone,
-            search_engine = 'google',
-            response_format = 'raw',
-            country = '',
-            data_format = 'markdown',
-            timeout = null,
-        } = opt;
-
-        const requests = queries.map((query) => {
-            const encoded_query = encodeURIComponent(query.trim());
-            let search_url;
-            switch (search_engine.toLowerCase()) {
-                case 'bing':
-                    search_url = `https://www.bing.com/search?q=${encoded_query}`;
-                    break;
-                case 'yandex':
-                    search_url = `https://yandex.com/search/?text=${encoded_query}`;
-                    break;
-                case 'google':
-                default:
-                    search_url = `https://www.google.com/search?q=${encoded_query}`;
-            }
-
-            const requestBody = {
-                zone: zone,
-                url: search_url,
-                format: response_format,
-                method: 'GET',
-                data_format: data_format,
-            };
-
-            if (country) {
-                requestBody.country = country.toLowerCase();
-            }
-
-            const controller = new AbortController();
-            const timeoutId = setTimeout(
-                () => controller.abort(),
-                timeout || this.default_timeout,
-            );
-
-            return fetch(REQUEST_API_URL, {
-                method: 'POST',
-                headers: getAuthHeaders(this.api_token),
-                body: JSON.stringify(requestBody),
-                signal: controller.signal,
-            })
-                .then(async (response) => {
-                    clearTimeout(timeoutId);
-                    if (!response.ok) {
-                        return {
-                            error: `HTTP ${response.status}`,
-                            query: query,
-                        };
-                    }
-
-                    let data;
-                    if (response_format === 'json') {
-                        data = await response.json();
-                    } else {
-                        data = await response.text();
-                    }
-                    return data;
-                })
-                .catch((error) => {
-                    clearTimeout(timeoutId);
-                    return {
-                        error: error.message,
-                        query: query,
-                    };
-                });
-        });
-
-        let isDone = false;
-        let results = null;
-
-        Promise.all(requests)
-            .then((res) => {
-                results = res;
-                isDone = true;
-            })
-            .catch((err) => {
-                results = queries.map((query) => ({
-                    error: err.message,
-                    query: query,
-                }));
-                isDone = true;
-            });
-
-        deasync.loopWhile(() => !isDone);
-
-        logger.info(
-            `Completed optimized batch search: ${results.length} results`,
-        );
-        return results;
     }
 }
