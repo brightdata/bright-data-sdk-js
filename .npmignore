@@ -10,3 +10,7 @@ tests/
 .github/
 .vscode/
 *.tgz
+.prettierrc
+eslint.config.mjs
+tsconfig.json
+jest.config.js

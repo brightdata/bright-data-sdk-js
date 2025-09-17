@@ -6,7 +6,7 @@ E.testEnvironment = 'node';
 E.collectCoverageFrom = [
     'src/**/*.js',
     '!src/**/*.test.js',
-    '!src/**/*.spec.js'
+    '!src/**/*.spec.js',
 ];
 E.coverageDirectory = 'coverage';
 E.coverageReporters = ['text', 'lcov', 'html'];
