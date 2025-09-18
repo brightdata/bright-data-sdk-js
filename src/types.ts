@@ -13,7 +13,22 @@ export type ZoneInfoResponse = ZoneInfo & {
     zone?: string;
 };
 
-export interface ScrapeOptions {
+export interface FetchingOptions {
+    /**
+     * Maximum parallel workers for multiple URLs (default: 10)
+     * Range: 1-50 workers
+     * @example 1 | 5 | 10 | 20 | 50
+     */
+    maxWorkers?: number;
+    /**
+     * Request timeout in milliseconds (default: 30000)
+     * Range: 1000-300000 ms (1 second to 5 minutes)
+     * @example 5000 | 10000 | 30000 | 60000 | 120000
+     */
+    timeout?: number;
+}
+
+export type ScrapeOptions = {
     /**
      * Zone identifier (default: auto-configured web_unlocker_zone)
      * @example 'web_unlocker_1' | 'my_scraping_zone'
@@ -41,23 +56,11 @@ export interface ScrapeOptions {
      * Available values: 'markdown' | 'html' | 'text' | 'json'
      */
     dataFormat?: 'markdown' | 'html' | 'text' | 'json';
-    /**
-     * Maximum parallel workers for multiple URLs (default: 10)
-     * Range: 1-50 workers
-     * @example 1 | 5 | 10 | 20 | 50
-     */
-    maxWorkers?: number;
-    /**
-     * Request timeout in milliseconds (default: 30000)
-     * Range: 1000-300000 ms (1 second to 5 minutes)
-     * @example 5000 | 10000 | 30000 | 60000 | 120000
-     */
-    timeout?: number;
-}
+} & FetchingOptions;
 
 export type SearchEngine = 'google' | 'bing' | 'yandex';
 
-export interface SearchOptions {
+export type SearchOptions = {
     /**
      * Zone identifier (default: auto-configured serp_zone)
      * @example 'serp_api_1' | 'my_search_zone'
@@ -88,16 +91,4 @@ export interface SearchOptions {
      * @example 'us' | 'gb' | 'de' | 'jp' | 'au' | 'ca' | 'fr' | 'it' | 'es' | 'br' | 'in' | ''
      */
     country?: string;
-    /**
-     * Maximum parallel workers for multiple queries (default: 10)
-     * Range: 1-50 workers
-     * @example 1 | 3 | 5 | 10 | 20
-     */
-    maxWorkers?: number;
-    /**
-     * Request timeout in milliseconds (default: 30000)
-     * Range: 1000-300000 ms (1 second to 5 minutes)
-     * @example 5000 | 15000 | 30000 | 45000 | 60000
-     */
-    timeout?: number;
-}
+} & FetchingOptions;

@@ -37,10 +37,10 @@ const toSEUrl = (searchEngine: SearchEngine, query: string) => {
 };
 
 export class SearchAPI {
-    private api_token: string;
+    private apiKey: string;
 
-    constructor(api_token: string) {
-        this.api_token = api_token;
+    constructor(apiKey: string) {
+        this.apiKey = apiKey;
     }
 
     async search(query: string | string[], opt: SearchOptions = {}) {
@@ -104,7 +104,7 @@ export class SearchAPI {
             const response = await request(REQUEST_API_URL, {
                 method: 'POST',
                 body: JSON.stringify(requestData),
-                headers: getAuthHeaders(this.api_token),
+                headers: getAuthHeaders(this.apiKey),
                 dispatcher: getDispatcher({ timeout }),
             });
 
@@ -115,7 +115,7 @@ export class SearchAPI {
             if (response.statusCode >= 400) {
                 if (response.statusCode == 401)
                     throw new AuthenticationError(
-                        'Invalid API token or insufficient permissions',
+                        'Invalid API key or insufficient permissions',
                     );
                 if (response.statusCode == 400)
                     throw new ValidationError(`Bad request: ${response_data}`);
@@ -170,7 +170,7 @@ export class SearchAPI {
 
             return request(REQUEST_API_URL, {
                 method: 'POST',
-                headers: getAuthHeaders(this.api_token),
+                headers: getAuthHeaders(this.apiKey),
                 body: JSON.stringify(requestBody),
                 signal: controller.signal,
                 dispatcher: getDispatcher(),

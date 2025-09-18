@@ -24,13 +24,19 @@ import type { ScrapeOptions } from '../types';
 const logger = getLogger('api.scraper');
 
 export class WebScraper {
-    private api_token: string;
+    private apiKey: string;
 
-    constructor(api_token: string) {
-        this.api_token = api_token;
+    constructor(apiKey: string) {
+        this.apiKey = apiKey;
     }
 
     async scrape(url: string | string[], opt: ScrapeOptions = {}) {
+        validateZoneName(opt.zone);
+        validateResponseFormat(opt.responseFormat);
+        validateHttpMethod(opt.method);
+        validateCountryCode(opt.country);
+        validateTimeout(opt.timeout);
+
         if (Array.isArray(url)) {
             validateUrlList(url);
             logger.info(
@@ -40,11 +46,6 @@ export class WebScraper {
         }
 
         validateUrl(url);
-        validateZoneName(opt.zone);
-        validateResponseFormat(opt.responseFormat);
-        validateHttpMethod(opt.method);
-        validateCountryCode(opt.country);
-        validateTimeout(opt.timeout);
 
         logger.info(`Starting single URL scraping: ${url}`);
 
@@ -82,7 +83,7 @@ export class WebScraper {
             const response = await request(REQUEST_API_URL, {
                 method: 'POST',
                 body: JSON.stringify(requestData),
-                headers: getAuthHeaders(this.api_token),
+                headers: getAuthHeaders(this.apiKey),
                 dispatcher: getDispatcher({ timeout }),
             });
 
@@ -93,7 +94,7 @@ export class WebScraper {
             if (response.statusCode >= 400) {
                 if (response.statusCode === 401) {
                     throw new AuthenticationError(
-                        'Invalid API token or insufficient permissions',
+                        'Invalid API key or insufficient permissions',
                     );
                 }
                 if (response.statusCode === 400) {
@@ -148,7 +149,7 @@ export class WebScraper {
 
             return request(REQUEST_API_URL, {
                 method: 'POST',
-                headers: getAuthHeaders(this.api_token),
+                headers: getAuthHeaders(this.apiKey),
                 body: JSON.stringify(requestBody),
                 dispatcher: getDispatcher(),
             });

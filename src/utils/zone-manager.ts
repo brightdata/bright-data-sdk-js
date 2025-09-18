@@ -34,9 +34,9 @@ export class ZoneManager {
     private base_url: string;
     private headers: Record<string, string> | null;
 
-    constructor(api_token: string) {
+    constructor(apiKey: string) {
         this.base_url = ZONE_API_URL;
-        this.headers = getAuthHeaders(api_token);
+        this.headers = getAuthHeaders(apiKey);
     }
     async list_zones(): Promise<ZoneInfo[]> {
         logger.info('Fetching list of active zones');
@@ -64,13 +64,13 @@ export class ZoneManager {
         } catch (e: any) {
             if (e.response?.status == 401)
                 throw new AuthenticationError(
-                    'Invalid API token or ' +
+                    'Invalid API key or ' +
                         'insufficient permissions to list zones',
                 );
             if (e.response?.status == 403)
                 throw new AuthenticationError(
                     'Insufficient permissions to list ' +
-                        'zones. API token needs admin access.',
+                        'zones. API key needs admin access.',
                 );
             throw new APIError(
                 `Failed to list zones: ${e.message}`,
@@ -156,13 +156,13 @@ export class ZoneManager {
             }
             if (e.response?.status == 401)
                 throw new AuthenticationError(
-                    'Invalid API token or ' +
+                    'Invalid API key or ' +
                         'insufficient permissions to create zones',
                 );
             if (e.response?.status == 403)
                 throw new AuthenticationError(
                     'Insufficient permissions to ' +
-                        'create zones. API token needs admin access.',
+                        'create zones. API key needs admin access.',
                 );
             throw new ZoneError(
                 `Failed to create zone ${zone_name}: ` + `${e.message}`,

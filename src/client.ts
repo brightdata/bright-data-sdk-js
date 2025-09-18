@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { z } from 'zod';
 import './config';
 import { WebScraper } from './api/scrape';
 import { SearchAPI } from './api/search';
@@ -10,16 +11,18 @@ import {
     DEFAULT_SERP_ZONE,
 } from './utils/constants';
 import { ValidationError } from './exceptions/errors';
+import { isTrueLike } from './utils/misc';
+import { ClientOptionsSchema, ApiKeySchema } from './schemas';
 import type { ZoneInfo, ScrapeOptions, SearchOptions } from './types';
 
 const logger = getLogger('client');
 
 interface BdClientOptions {
     /**
-     * Your Bright Data API token (can also be set via BRIGHTDATA_API_TOKEN env var)
+     * Your Bright Data API key (can also be set via BRIGHTDATA_API_KEY env var)
      * @example 'brd-customer-hl_12345678-zone-web_unlocker:abc123xyz'
      */
-    apiToken?: string;
+    apiKey?: string;
     /**
      * Automatically create required zones if they don't exist (default: true)
      * @example true | false
@@ -53,7 +56,7 @@ interface BdClientOptions {
 }
 
 export class bdclient {
-    private apiToken!: string;
+    private apiKey!: string;
     private webUnlockerZone: string;
     private serpZone: string;
     private autoCreateZones: boolean;
@@ -61,64 +64,47 @@ export class bdclient {
     private searchApi: SearchAPI;
     private zoneManager: ZoneManager;
 
-    constructor(opt: BdClientOptions = {}) {
-        const {
-            apiToken,
-            autoCreateZones = true,
-            webUnlockerZone,
-            serpZone,
-            logLevel = 'INFO',
-            structuredLogging = true,
-            verbose = null,
-        } = opt;
-        const env_verbose = process.env.BRIGHTDATA_VERBOSE?.toLowerCase();
-        const is_verbose = verbose
-            ? verbose
-            : ['true', '1', 'yes', 'on'].includes(env_verbose || '');
-        setupLogging(logLevel, structuredLogging, is_verbose);
+    constructor(options: BdClientOptions) {
+        const opt = ClientOptionsSchema.parse(options || {});
+        const is_verbose = opt.verbose
+            ? opt.verbose
+            : isTrueLike(process.env.BRIGHTDATA_VERBOSE || '');
+
+        setupLogging(opt.logLevel, opt.structuredLogging, is_verbose);
+
         logger.info('Initializing Bright Data SDK client');
 
-        const token = apiToken || process.env.BRIGHTDATA_API_TOKEN;
+        this.apiKey = ApiKeySchema.parse(
+            opt.apiKey || process.env.BRIGHTDATA_API_KEY,
+        );
 
-        if (!token) {
-            logger.error('API token not provided');
-
-            throw new ValidationError(
-                'API token is required. Provide it as ' +
-                    'parameter or set BRIGHTDATA_API_TOKEN environment variable',
-            );
-        }
-        if (typeof token != 'string') {
-            logger.error('API token must be a string');
-            throw new ValidationError('API token must be a string');
-        }
-        if (token.trim().length < 10) {
-            logger.error('API token appears to be invalid (too short)');
-            throw new ValidationError('API token appears to be invalid');
-        }
-        this.apiToken = token;
-        const token_preview =
-            this.apiToken.length > 8
-                ? `${this.apiToken.slice(0, 4)}***${this.apiToken.slice(-4)}`
+        const keyPreview =
+            this.apiKey.length > 8
+                ? `${this.apiKey.slice(0, 4)}***${this.apiKey.slice(-4)}`
                 : '***';
-        logger.info(`API token validated successfully: ${token_preview}`);
+
+        logger.info(`API key validated successfully: ${keyPreview}`);
+
         this.webUnlockerZone =
-            webUnlockerZone ||
+            opt.webUnlockerZone ||
             process.env.WEB_UNLOCKER_ZONE ||
             DEFAULT_WEB_UNLOCKER_ZONE;
-        this.serpZone = serpZone || process.env.SERP_ZONE || DEFAULT_SERP_ZONE;
-        this.autoCreateZones = autoCreateZones;
+        this.serpZone =
+            opt.serpZone || process.env.SERP_ZONE || DEFAULT_SERP_ZONE;
+        this.autoCreateZones = opt.autoCreateZones;
+
         logger.info('HTTP client configured with secure headers');
-        this.webScraper = new WebScraper(this.apiToken);
-        this.searchApi = new SearchAPI(this.apiToken);
-        this.zoneManager = new ZoneManager(this.apiToken);
+
+        this.webScraper = new WebScraper(this.apiKey);
+        this.searchApi = new SearchAPI(this.apiKey);
+        this.zoneManager = new ZoneManager(this.apiKey);
     }
     async init() {
         if (this.autoCreateZones) {
-            await this._ensure_zones();
+            await this.ensureZones();
         }
     }
-    scrape(url: string | string[], opt: ScrapeOptions = {}) {
+    async scrape(url: string | string[], opt: ScrapeOptions = {}) {
         const {
             zone,
             responseFormat = 'raw',
@@ -141,7 +127,7 @@ export class bdclient {
             timeout,
         });
     }
-    search(query: string | string[], opt: SearchOptions = {}) {
+    async search(query: string | string[], opt: SearchOptions = {}) {
         const {
             zone,
             searchEngine = 'google',
@@ -163,7 +149,7 @@ export class bdclient {
             timeout,
         });
     }
-    download_content(
+    downloadContent(
         content: any,
         filename: string | null = null,
         format: 'json' | 'csv' | 'txt' = 'json',
@@ -316,7 +302,7 @@ export class bdclient {
             }
         }
     }
-    async _ensure_zones() {
+    async ensureZones() {
         try {
             logger.info('Ensuring required zones exist for synchronous client');
             const results = await this.zoneManager.ensureRequiredZones(
@@ -336,7 +322,7 @@ export class bdclient {
             );
         }
     }
-    async list_zones(): Promise<ZoneInfo[]> {
+    async listZones(): Promise<ZoneInfo[]> {
         try {
             return await this.zoneManager.list_zones();
         } catch (e: any) {

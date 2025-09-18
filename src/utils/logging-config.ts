@@ -13,12 +13,12 @@ const logLevels: Record<LOG_LEVEL, number> = {
 };
 
 export function setupLogging(
-    log_level: LOG_LEVEL = 'INFO',
-    structured_logging = true,
+    logLevel: LOG_LEVEL = 'INFO',
+    structuredLogging = true,
     verbose = false,
 ) {
-    currentLogLevel = log_level.toUpperCase() as LOG_LEVEL;
-    isStructuredLogging = structured_logging;
+    currentLogLevel = logLevel.toUpperCase() as LOG_LEVEL;
+    isStructuredLogging = structuredLogging;
     isVerbose = verbose;
 }
 

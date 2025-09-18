@@ -17,3 +17,6 @@ export function safeJsonParse(data: unknown) {
         return data;
     }
 }
+
+export const isTrueLike = (val: unknown) =>
+    ['true', '1', 'yes', 'on'].includes(String(val).toLowerCase());
