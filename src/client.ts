@@ -6,7 +6,6 @@ import { SearchAPI } from './api/search';
 import { ZoneManager } from './utils/zone-manager';
 import { setupLogging, getLogger } from './utils/logging-config';
 import {
-    DEFAULT_TIMEOUT,
     DEFAULT_WEB_UNLOCKER_ZONE,
     DEFAULT_SERP_ZONE,
 } from './utils/constants';

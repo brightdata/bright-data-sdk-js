@@ -1,10 +1,10 @@
 type LOG_LEVEL = 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL';
 
-let current_log_level: LOG_LEVEL = 'INFO';
-let is_structured_logging = true;
-let is_verbose = false;
+let currentLogLevel: LOG_LEVEL = 'INFO';
+let isStructuredLogging = true;
+let isVerbose = false;
 
-const log_levels: Record<LOG_LEVEL, number> = {
+const logLevels: Record<LOG_LEVEL, number> = {
     DEBUG: 0,
     INFO: 1,
     WARNING: 2,
@@ -17,9 +17,9 @@ export function setupLogging(
     structured_logging = true,
     verbose = false,
 ) {
-    current_log_level = log_level.toUpperCase() as LOG_LEVEL;
-    is_structured_logging = structured_logging;
-    is_verbose = verbose;
+    currentLogLevel = log_level.toUpperCase() as LOG_LEVEL;
+    isStructuredLogging = structured_logging;
+    isVerbose = verbose;
 }
 
 export function getLogger(name: string) {
@@ -38,13 +38,12 @@ export function getLogger(name: string) {
 }
 
 function log(level: LOG_LEVEL, name: string, message: string, extra = {}) {
-    const current_level_value =
-        log_levels[current_log_level] || log_levels.INFO;
-    const message_level_value = log_levels[level] || log_levels.INFO;
-    if (!is_verbose && message_level_value < log_levels.WARNING) return;
+    const current_level_value = logLevels[currentLogLevel] || logLevels.INFO;
+    const message_level_value = logLevels[level] || logLevels.INFO;
+    if (!isVerbose && message_level_value < logLevels.WARNING) return;
     if (message_level_value < current_level_value) return;
     const timestamp = new Date().toISOString();
-    if (is_structured_logging) {
+    if (isStructuredLogging) {
         const log_entry = {
             timestamp,
             level,
@@ -80,38 +79,4 @@ export function logRequest(method: string, url: string, data = {}) {
         url,
         data: typeof data == 'object' ? JSON.stringify(data) : data,
     });
-}
-
-export function safeJsonParse(data: unknown) {
-    if (typeof data == 'string') {
-        try {
-            return JSON.parse(data);
-        } catch (e: any) {
-            const logger = getLogger('utils.json');
-            logger.warning(
-                'Failed to parse JSON response, returning as ' + 'string',
-                {
-                    error: e.message,
-                    data:
-                        data.substring(0, 200) +
-                        (data.length > 200 ? '...' : ''),
-                },
-            );
-            return data;
-        }
-    }
-    return data;
-}
-
-export function validateResponseSize(data: unknown) {
-    const max_size = 50 * 1024 * 1024;
-    let data_size;
-    if (typeof data == 'string') data_size = Buffer.byteLength(data, 'utf8');
-    else if (Buffer.isBuffer(data)) data_size = data.length;
-    else data_size = Buffer.byteLength(JSON.stringify(data), 'utf8');
-    if (data_size > max_size)
-        throw new Error(
-            `Response size (${Math.round(data_size / 1024 / 1024)}MB) ` +
-                'exceeds maximum allowed size (50MB)',
-        );
 }

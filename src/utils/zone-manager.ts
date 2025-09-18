@@ -79,7 +79,7 @@ export class ZoneManager {
             );
         }
     }
-    private async zone_exists(zone_name: string) {
+    private async isZoneExists(zone_name: string) {
         validateZoneName(zone_name);
         logger.debug(`Checking if zone exists: ${zone_name}`);
         try {
@@ -94,7 +94,7 @@ export class ZoneManager {
             return false;
         }
     }
-    private async create_zone(
+    private async createZone(
         zone_name: string,
         zone_type = 'static',
         opt: ZoneCreationOpts = {},
@@ -169,14 +169,14 @@ export class ZoneManager {
             );
         }
     }
-    async ensureRequiredZones(web_unlocker_zone: string, serp_zone: string) {
+    async ensureRequiredZones(webUnlockerZone: string, serp_zone: string) {
         logger.info('Ensuring required zones exist', {
-            web_unlocker_zone,
+            webUnlockerZone,
             serp_zone,
         });
         const results = {
             web_unlocker: {
-                zone: web_unlocker_zone,
+                zone: webUnlockerZone,
                 exists: false,
                 created: false,
             },
@@ -184,20 +184,19 @@ export class ZoneManager {
         };
         try {
             results.web_unlocker.exists =
-                await this.zone_exists(web_unlocker_zone);
+                await this.isZoneExists(webUnlockerZone);
             if (!results.web_unlocker.exists) {
-                logger.info(`Creating web unlocker zone: ${web_unlocker_zone}`);
-                await this.create_zone(web_unlocker_zone, 'unblocker');
+                logger.info(`Creating web unlocker zone: ${webUnlockerZone}`);
+                await this.createZone(webUnlockerZone, 'unblocker');
                 results.web_unlocker.created = true;
             } else
                 logger.info(
-                    'Web unlocker zone already exists: ' +
-                        `${web_unlocker_zone}`,
+                    'Web unlocker zone already exists: ' + `${webUnlockerZone}`,
                 );
-            results.serp.exists = await this.zone_exists(serp_zone);
+            results.serp.exists = await this.isZoneExists(serp_zone);
             if (!results.serp.exists) {
                 logger.info(`Creating SERP zone: ${serp_zone}`);
-                await this.create_zone(serp_zone, 'unblocker', {
+                await this.createZone(serp_zone, 'unblocker', {
                     is_serp_zone: true,
                 });
                 results.serp.created = true;
@@ -207,7 +206,7 @@ export class ZoneManager {
         } catch (e: any) {
             logger.error('Failed to ensure required zones exist', {
                 error: e.message,
-                web_unlocker_zone,
+                webUnlockerZone,
                 serp_zone,
             });
             logger.warning(

@@ -221,3 +221,19 @@ export function validateHttpMethod(method: unknown) {
                 `options: ${valid_methods.join(', ')}`,
         );
 }
+
+export function validateResponseSize(data: unknown) {
+    const max_size = 50 * 1024 * 1024;
+    let data_size;
+
+    if (typeof data == 'string') data_size = Buffer.byteLength(data, 'utf8');
+    else if (Buffer.isBuffer(data)) data_size = data.length;
+    else data_size = Buffer.byteLength(JSON.stringify(data), 'utf8');
+
+    if (data_size > max_size) {
+        throw new Error(
+            `Response size (${Math.round(data_size / 1024 / 1024)}MB) ` +
+                'exceeds maximum allowed size (50MB)',
+        );
+    }
+}

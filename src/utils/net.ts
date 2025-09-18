@@ -8,16 +8,12 @@ import {
 
 const { dns, retry } = interceptors;
 
-let agent: Dispatcher;
-
 interface GetDispatcherOptions {
     timeout?: number;
 }
 
 export const getDispatcher = (params: GetDispatcherOptions = {}) => {
-    if (agent) return agent;
-
-    agent = new Agent({
+    return new Agent({
         headersTimeout: 10_000,
         bodyTimeout: params.timeout || DEFAULT_TIMEOUT,
     }).compose(
@@ -28,8 +24,6 @@ export const getDispatcher = (params: GetDispatcherOptions = {}) => {
             statusCodes: RETRY_STATUSES,
         }),
     );
-
-    return agent;
 };
 
 export const isResponseOk = (response: Dispatcher.ResponseData): boolean =>

@@ -7,11 +7,10 @@ import {
     validateSearchEngine,
     validateQuery,
     validateResponseFormat,
-    getLogger,
-    logRequest,
-    safeJsonParse,
     validateResponseSize,
-} from '../utils';
+} from '../utils/validation';
+import { safeJsonParse } from '../utils/misc';
+import { getLogger, logRequest } from '../utils/logging-config';
 import {
     ValidationError,
     APIError,
