@@ -17,111 +17,96 @@ import {
     APIError,
     AuthenticationError,
 } from '../exceptions/errors';
+import { getDispatcher, isResponseOk } from '../utils/net';
 import { getAuthHeaders } from '../utils/auth';
-import type { SearchOptions } from '../types';
+import type { SearchOptions, SearchEngine } from '../types';
 
 const logger = getLogger('api.search');
 
+const toSEUrl = (searchEngine: SearchEngine, query: string) => {
+    const encoded_query = encodeURIComponent(query.trim());
+
+    switch (searchEngine.toLowerCase()) {
+        case 'bing':
+            return `https://www.bing.com/search?q=${encoded_query}`;
+        case 'yandex':
+            return `https://yandex.com/search/?text=${encoded_query}`;
+        case 'google':
+        default:
+            return `https://www.google.com/search?q=${encoded_query}`;
+    }
+};
+
 export class SearchAPI {
     private api_token: string;
-    private default_timeout: number;
-    private max_retries: number;
-    private retry_backoff: number;
 
-    constructor(
-        api_token: string,
-        default_timeout = 30 * 1000,
-        max_retries = 3,
-        retry_backoff = 1.5,
-    ) {
+    constructor(api_token: string) {
         this.api_token = api_token;
-        this.default_timeout = default_timeout;
-        this.max_retries = max_retries;
-        this.retry_backoff = retry_backoff;
     }
 
     async search(query: string | string[], opt: SearchOptions = {}) {
         const {
-            zone,
-            search_engine = 'google',
-            response_format = 'raw',
+            searchEngine = 'google',
+            responseFormat = 'raw',
             country = '',
             timeout = null,
         } = opt;
 
+        validateQuery(query);
+        validateZoneName(opt.zone);
+        validateSearchEngine(searchEngine);
+        validateResponseFormat(responseFormat);
+        validateCountryCode(country);
+        validateTimeout(timeout);
+
         if (Array.isArray(query)) {
-            validateQuery(query);
-            validateSearchEngine(search_engine);
-            validateZoneName(zone);
-            validateResponseFormat(response_format);
-            validateCountryCode(country);
-            validateTimeout(timeout || this.default_timeout);
             logger.info(
                 `Starting batch search operation for ${query.length} queries`,
             );
-            return this._search_batch(query, opt);
+
+            return this.searchBatch(query, opt);
         }
 
         if (typeof query !== 'string' || query.trim() == '')
             throw new ValidationError('Query must be a non-empty string');
-        validateZoneName(zone);
-        validateSearchEngine(search_engine);
-        validateResponseFormat(response_format);
-        validateCountryCode(country);
-        validateTimeout(timeout || this.default_timeout);
 
         logger.info(`Starting single query search: ${query}`);
-        return this._search_single(query, opt);
+        return this.searchSingle(query, opt);
     }
 
-    async _search_single(query: string, opt: SearchOptions = {}) {
+    private async searchSingle(query: string, opt: SearchOptions = {}) {
         const {
             zone,
-            search_engine = 'google',
-            response_format = 'raw',
+            searchEngine = 'google',
+            responseFormat = 'raw',
             country = '',
-            data_format = 'markdown',
+            dataFormat = 'markdown',
             timeout = null,
         } = opt;
 
-        const encoded_query = encodeURIComponent(query.trim());
-        let search_url;
-        switch (search_engine.toLowerCase()) {
-            case 'bing':
-                search_url = `https://www.bing.com/search?q=${encoded_query}`;
-                break;
-            case 'yandex':
-                search_url = `https://yandex.com/search/?text=${encoded_query}`;
-                break;
-            case 'google':
-            default:
-                search_url = `https://www.google.com/search?q=${encoded_query}`;
-        }
-
-        const request_data: Record<string, unknown> = {
-            url: search_url,
+        const requestData: Record<string, unknown> = {
+            url: toSEUrl(searchEngine, query),
             zone,
-            format: response_format,
+            format: responseFormat,
             method: 'GET',
             country: country.toLowerCase(),
-            data_format,
+            data_format: dataFormat,
         };
 
-        // Clean up empty values
-        Object.keys(request_data).forEach((key) => {
-            if (!request_data[key]) {
-                delete request_data[key];
+        Object.keys(requestData).forEach((key) => {
+            if (!requestData[key]) {
+                delete requestData[key];
             }
         });
 
-        logRequest('POST', REQUEST_API_URL, request_data);
+        logRequest('POST', REQUEST_API_URL, requestData);
 
         try {
             const response = await request(REQUEST_API_URL, {
                 method: 'POST',
-                body: JSON.stringify(request_data),
-                timeout: timeout || this.default_timeout,
+                body: JSON.stringify(requestData),
                 headers: getAuthHeaders(this.api_token),
+                dispatcher: getDispatcher({ timeout }),
             });
 
             const response_data = await response.body.text();
@@ -142,7 +127,7 @@ export class SearchAPI {
                 );
             }
 
-            if (response_format == 'json') return safeJsonParse(response_data);
+            if (responseFormat == 'json') return safeJsonParse(response_data);
             return response_data;
         } catch (e: any) {
             if (
@@ -156,40 +141,25 @@ export class SearchAPI {
         }
     }
 
-    async _search_batch(queries: string[], opt: SearchOptions = {}) {
+    private async searchBatch(queries: string[], opt: SearchOptions = {}) {
         logger.info(`Processing ${queries.length} queries in parallel`);
 
         const {
             zone,
-            search_engine = 'google',
-            response_format = 'json',
+            searchEngine = 'google',
+            responseFormat = 'json',
             country = '',
-            data_format = 'markdown',
+            dataFormat = 'markdown',
             timeout = null,
         } = opt;
 
-        // Create all fetch requests (same pattern as successful scraper)
         const requests = queries.map((query) => {
-            const encoded_query = encodeURIComponent(query.trim());
-            let search_url;
-            switch (search_engine.toLowerCase()) {
-                case 'bing':
-                    search_url = `https://www.bing.com/search?q=${encoded_query}`;
-                    break;
-                case 'yandex':
-                    search_url = `https://yandex.com/search/?text=${encoded_query}`;
-                    break;
-                case 'google':
-                default:
-                    search_url = `https://www.google.com/search?q=${encoded_query}`;
-            }
-
-            const requestBody = {
+            const requestBody: Record<string, unknown> = {
                 zone: zone,
-                url: search_url,
-                format: response_format,
+                url: toSEUrl(searchEngine, query),
+                format: responseFormat,
                 method: 'GET',
-                data_format: data_format,
+                data_format: dataFormat,
             };
 
             if (country) {
@@ -197,16 +167,14 @@ export class SearchAPI {
             }
 
             const controller = new AbortController();
-            const timeoutId = setTimeout(
-                () => controller.abort(),
-                timeout || this.default_timeout,
-            );
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-            return fetch(REQUEST_API_URL, {
+            return request(REQUEST_API_URL, {
                 method: 'POST',
                 headers: getAuthHeaders(this.api_token),
                 body: JSON.stringify(requestBody),
                 signal: controller.signal,
+                dispatcher: getDispatcher(),
             })
                 .then((response) => {
                     clearTimeout(timeoutId);
@@ -219,29 +187,27 @@ export class SearchAPI {
         });
 
         try {
-            // Wait for all requests in parallel
             const responses = await Promise.all(requests);
 
-            // Process all responses
             const results = [];
             for (let i = 0; i < responses.length; i++) {
                 const response = responses[i];
                 const query = queries[i];
 
                 try {
-                    if (!response.ok) {
+                    if (!isResponseOk(response)) {
                         results.push({
-                            error: `HTTP ${response.status}`,
+                            error: `HTTP ${response.statusCode}`,
                             query: query,
                         });
                         continue;
                     }
 
                     let data;
-                    if (opt.response_format === 'json') {
-                        data = await response.json();
+                    if (responseFormat === 'json') {
+                        data = await response.body.json();
                     } else {
-                        data = await response.text();
+                        data = await response.body.text();
                     }
 
                     results.push(data);

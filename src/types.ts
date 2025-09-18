@@ -1,11 +1,17 @@
 export interface ZoneInfo {
     name: string;
     type: string;
-    status: string;
     ips: number;
     bandwidth: number;
-    created: string;
+    created?: string;
+    status?: string;
 }
+
+export type ZoneInfoResponse = ZoneInfo & {
+    zone_type?: string;
+    created_at?: string;
+    zone?: string;
+};
 
 export interface ScrapeOptions {
     /**
@@ -19,7 +25,7 @@ export interface ScrapeOptions {
      * - "raw": Returns HTML string
      * - "json": Returns structured data object
      */
-    response_format?: 'json' | 'raw';
+    responseFormat?: 'json' | 'raw';
     /**
      * HTTP method for the request (default: "GET")
      * Available values: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
@@ -34,18 +40,13 @@ export interface ScrapeOptions {
      * Additional format transformation (default: "markdown")
      * Available values: 'markdown' | 'html' | 'text' | 'json'
      */
-    data_format?: string;
-    /**
-     * Enable asynchronous processing (default: false)
-     * @example true | false
-     */
-    async_request?: boolean;
+    dataFormat?: 'markdown' | 'html' | 'text' | 'json';
     /**
      * Maximum parallel workers for multiple URLs (default: 10)
      * Range: 1-50 workers
      * @example 1 | 5 | 10 | 20 | 50
      */
-    max_workers?: number;
+    maxWorkers?: number;
     /**
      * Request timeout in milliseconds (default: 30000)
      * Range: 1000-300000 ms (1 second to 5 minutes)
@@ -53,6 +54,8 @@ export interface ScrapeOptions {
      */
     timeout?: number;
 }
+
+export type SearchEngine = 'google' | 'bing' | 'yandex';
 
 export interface SearchOptions {
     /**
@@ -67,14 +70,19 @@ export interface SearchOptions {
      * - "bing": Microsoft Bing
      * - "yandex": Yandex Search
      */
-    search_engine?: 'google' | 'bing' | 'yandex';
+    searchEngine?: SearchEngine;
     /**
      * Response format (default: "raw")
      * Available values:
      * - "raw": Returns HTML string of search results page
      * - "json": Returns structured search results object
      */
-    response_format?: 'json' | 'raw';
+    responseFormat?: 'json' | 'raw';
+    /**
+     * Additional format transformation (default: "markdown")
+     * Available values: 'markdown' | 'html' | 'text' | 'json'
+     */
+    dataFormat?: 'markdown' | 'html' | 'text' | 'json';
     /**
      * Two-letter ISO country code for search region (default: "")
      * @example 'us' | 'gb' | 'de' | 'jp' | 'au' | 'ca' | 'fr' | 'it' | 'es' | 'br' | 'in' | ''
@@ -85,7 +93,7 @@ export interface SearchOptions {
      * Range: 1-50 workers
      * @example 1 | 3 | 5 | 10 | 20
      */
-    max_workers?: number;
+    maxWorkers?: number;
     /**
      * Request timeout in milliseconds (default: 30000)
      * Range: 1000-300000 ms (1 second to 5 minutes)

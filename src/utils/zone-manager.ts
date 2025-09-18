@@ -4,7 +4,7 @@ import { validateZoneName } from './validation';
 import { ZONE_API_URL } from './constants';
 import { getAuthHeaders } from './auth';
 import { ZoneError, AuthenticationError, APIError } from '../exceptions/errors';
-import type { ZoneInfo } from '../types';
+import type { ZoneInfo, ZoneInfoResponse } from '../types';
 
 const logger = getLogger('utils.zone-manager');
 
@@ -49,7 +49,7 @@ export class ZoneManager {
                 },
             );
 
-            const zones = await response.body.json();
+            const zones = (await response.body.json()) as ZoneInfoResponse[];
 
             logger.info(`Found ${zones.length} active zones`);
 

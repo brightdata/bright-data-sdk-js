@@ -6,12 +6,7 @@ import { SearchAPI } from './api/search';
 import { ZoneManager } from './utils/zone-manager';
 import { setupLogging, getLogger } from './utils/logging-config';
 import {
-    DEFAULT_MAX_WORKERS,
     DEFAULT_TIMEOUT,
-    CONNECTION_POOL_SIZE,
-    MAX_RETRIES,
-    RETRY_BACKOFF_FACTOR,
-    RETRY_STATUSES,
     DEFAULT_WEB_UNLOCKER_ZONE,
     DEFAULT_SERP_ZONE,
 } from './utils/constants';
@@ -25,32 +20,32 @@ interface BdClientOptions {
      * Your Bright Data API token (can also be set via BRIGHTDATA_API_TOKEN env var)
      * @example 'brd-customer-hl_12345678-zone-web_unlocker:abc123xyz'
      */
-    api_token?: string;
+    apiToken?: string;
     /**
      * Automatically create required zones if they don't exist (default: true)
      * @example true | false
      */
-    auto_create_zones?: boolean;
+    autoCreateZones?: boolean;
     /**
      * Custom zone name for web unlocker (default: from env or 'sdk_unlocker')
      * @example 'my_web_zone' | 'web_unlocker_1' | 'scraping_zone'
      */
-    web_unlocker_zone?: string;
+    webUnlockerZone?: string;
     /**
      * Custom zone name for SERP API (default: from env or 'sdk_serp')
      * @example 'my_serp_zone' | 'search_zone' | 'serp_api_1'
      */
-    serp_zone?: string;
+    serpZone?: string;
     /**
      * Log level (default: 'INFO')
      * Available values: 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL'
      */
-    log_level?: 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL';
+    logLevel?: 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL';
     /**
      * Use structured JSON logging (default: true)
      * @example true (JSON format) | false (plain text)
      */
-    structured_logging?: boolean;
+    structuredLogging?: boolean;
     /**
      * Enable verbose logging (default: false)
      * @example true | false
@@ -59,38 +54,32 @@ interface BdClientOptions {
 }
 
 export class bdclient {
-    private api_token!: string;
-    private web_unlocker_zone: string;
-    private serp_zone: string;
-    private auto_create_zones: boolean;
-    private web_scraper: WebScraper;
-    private search_api: SearchAPI;
-    private zone_manager: ZoneManager;
-    private DEFAULT_MAX_WORKERS: number;
-    private DEFAULT_TIMEOUT: number;
-    private CONNECTION_POOL_SIZE: number;
-    private MAX_RETRIES: number;
-    private RETRY_BACKOFF_FACTOR: number;
-    private RETRY_STATUSES: Set<number>;
+    private apiToken!: string;
+    private webUnlockerZone: string;
+    private serpZone: string;
+    private autoCreateZones: boolean;
+    private webScraper: WebScraper;
+    private searchApi: SearchAPI;
+    private zoneManager: ZoneManager;
 
     constructor(opt: BdClientOptions = {}) {
         const {
-            api_token,
-            auto_create_zones = true,
-            web_unlocker_zone,
-            serp_zone,
-            log_level = 'INFO',
-            structured_logging = true,
+            apiToken,
+            autoCreateZones = true,
+            webUnlockerZone,
+            serpZone,
+            logLevel = 'INFO',
+            structuredLogging = true,
             verbose = null,
         } = opt;
         const env_verbose = process.env.BRIGHTDATA_VERBOSE?.toLowerCase();
         const is_verbose = verbose
             ? verbose
             : ['true', '1', 'yes', 'on'].includes(env_verbose || '');
-        setupLogging(log_level, structured_logging, is_verbose);
+        setupLogging(logLevel, structuredLogging, is_verbose);
         logger.info('Initializing Bright Data SDK client');
 
-        const token = api_token || process.env.BRIGHTDATA_API_TOKEN;
+        const token = apiToken || process.env.BRIGHTDATA_API_TOKEN;
 
         if (!token) {
             logger.error('API token not provided');
@@ -108,91 +97,71 @@ export class bdclient {
             logger.error('API token appears to be invalid (too short)');
             throw new ValidationError('API token appears to be invalid');
         }
-        this.api_token = token;
+        this.apiToken = token;
         const token_preview =
-            this.api_token.length > 8
-                ? `${this.api_token.slice(0, 4)}***${this.api_token.slice(-4)}`
+            this.apiToken.length > 8
+                ? `${this.apiToken.slice(0, 4)}***${this.apiToken.slice(-4)}`
                 : '***';
         logger.info(`API token validated successfully: ${token_preview}`);
-        this.web_unlocker_zone =
-            web_unlocker_zone ||
+        this.webUnlockerZone =
+            webUnlockerZone ||
             process.env.WEB_UNLOCKER_ZONE ||
             DEFAULT_WEB_UNLOCKER_ZONE;
-        this.serp_zone =
-            serp_zone || process.env.SERP_ZONE || DEFAULT_SERP_ZONE;
-        this.auto_create_zones = auto_create_zones;
-        this.DEFAULT_MAX_WORKERS = DEFAULT_MAX_WORKERS;
-        this.DEFAULT_TIMEOUT = DEFAULT_TIMEOUT;
-        this.CONNECTION_POOL_SIZE = CONNECTION_POOL_SIZE;
-        this.MAX_RETRIES = MAX_RETRIES;
-        this.RETRY_BACKOFF_FACTOR = RETRY_BACKOFF_FACTOR;
-        this.RETRY_STATUSES = RETRY_STATUSES;
+        this.serpZone = serpZone || process.env.SERP_ZONE || DEFAULT_SERP_ZONE;
+        this.autoCreateZones = autoCreateZones;
         logger.info('HTTP client configured with secure headers');
-        this.web_scraper = new WebScraper(
-            this.api_token,
-            this.DEFAULT_TIMEOUT,
-            this.MAX_RETRIES,
-            this.RETRY_BACKOFF_FACTOR,
-        );
-        this.search_api = new SearchAPI(
-            this.api_token,
-            this.DEFAULT_TIMEOUT,
-            this.MAX_RETRIES,
-            this.RETRY_BACKOFF_FACTOR,
-        );
-        this.zone_manager = new ZoneManager(this.api_token);
+        this.webScraper = new WebScraper(this.apiToken);
+        this.searchApi = new SearchAPI(this.apiToken);
+        this.zoneManager = new ZoneManager(this.apiToken);
     }
     async init() {
-        if (this.auto_create_zones) {
+        if (this.autoCreateZones) {
             await this._ensure_zones();
         }
     }
     scrape(url: string | string[], opt: ScrapeOptions = {}) {
         const {
-            zone = null,
-            response_format = 'raw',
+            zone,
+            responseFormat = 'raw',
             method = 'GET',
             country = '',
-            data_format = 'markdown',
-            timeout = null,
+            dataFormat = 'markdown',
+            timeout,
         } = opt;
         logger.info(
             'Starting scrape operation for ' +
                 `${Array.isArray(url) ? url.length : 1} URL(s)`,
         );
-        const actual_zone = zone || this.web_unlocker_zone;
-        const actual_timeout = timeout || this.DEFAULT_TIMEOUT;
 
-        return this.web_scraper.scrape(url, {
-            zone: actual_zone,
-            response_format,
+        return this.webScraper.scrape(url, {
+            responseFormat,
             method,
             country,
-            data_format,
-            timeout: actual_timeout,
+            dataFormat,
+            zone: zone || this.webUnlockerZone,
+            timeout,
         });
     }
     search(query: string | string[], opt: SearchOptions = {}) {
         const {
-            zone = null,
-            search_engine = 'google',
-            response_format = 'raw',
+            zone,
+            searchEngine = 'google',
+            responseFormat = 'raw',
             country = '',
-            timeout = null,
+            timeout,
         } = opt;
+
         logger.info(
             'Starting search operation for ' +
                 `${Array.isArray(query) ? query.length : 1} query/queries`,
         );
-        const actual_zone = zone || this.serp_zone;
-        const actual_timeout = timeout || this.DEFAULT_TIMEOUT;
 
-        return this.search_api.search(query, {
-            zone: actual_zone,
-            search_engine,
-            response_format,
+        return this.searchApi.search(query, {
+            zone: zone || this.serpZone,
+            searchEngine,
+            responseFormat,
             country,
-            timeout: actual_timeout,
+            timeout,
         });
     }
     download_content(
@@ -351,9 +320,9 @@ export class bdclient {
     async _ensure_zones() {
         try {
             logger.info('Ensuring required zones exist for synchronous client');
-            const results = await this.zone_manager.ensureRequiredZones(
-                this.web_unlocker_zone,
-                this.serp_zone,
+            const results = await this.zoneManager.ensureRequiredZones(
+                this.webUnlockerZone,
+                this.serpZone,
             );
 
             if (results.web_unlocker.created || results.serp.created) {
@@ -370,7 +339,7 @@ export class bdclient {
     }
     async list_zones(): Promise<ZoneInfo[]> {
         try {
-            return await this.zone_manager.list_zones();
+            return await this.zoneManager.list_zones();
         } catch (e: any) {
             logger.error(`Failed to list zones: ${e.message}`);
             return [];

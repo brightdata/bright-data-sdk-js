@@ -35,7 +35,8 @@
     },
     "dependencies": {
         "dotenv": "^17.2.2",
-        "undici": "^7.16.0"
+        "undici": "^7.16.0",
+        "zod": "^4.1.9"
     },
     "devDependencies": {
         "@eslint/js": "^9.35.0",
