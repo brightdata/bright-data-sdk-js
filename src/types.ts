@@ -28,12 +28,7 @@ export interface FetchingOptions {
     timeout?: number;
 }
 
-export type ScrapeOptions = {
-    /**
-     * Zone identifier (default: auto-configured web_unlocker_zone)
-     * @example 'web_unlocker_1' | 'my_scraping_zone'
-     */
-    zone?: string;
+type BaseScrapeOptions = {
     /**
      * Response format (default: "raw")
      * Available values:
@@ -53,19 +48,22 @@ export type ScrapeOptions = {
     country?: string;
     /**
      * Additional format transformation (default: "markdown")
-     * Available values: 'markdown' | 'html' | 'text' | 'json'
+     * Available values: 'markdown' | 'screenshot'
      */
-    dataFormat?: 'markdown' | 'html' | 'text' | 'json';
+    dataFormat?: 'markdown' | 'screenshot';
 } & FetchingOptions;
+
+export type ScrapeOptions = {
+    /**
+     * Zone identifier (default: auto-configured web_unlocker_zone)
+     * @example 'web_unlocker_1' | 'my_scraping_zone'
+     */
+    zone?: string;
+} & BaseScrapeOptions;
 
 export type SearchEngine = 'google' | 'bing' | 'yandex';
 
 export type SearchOptions = {
-    /**
-     * Zone identifier (default: auto-configured serp_zone)
-     * @example 'serp_api_1' | 'my_search_zone'
-     */
-    zone?: string;
     /**
      * Search engine to use (default: "google")
      * Available values:
@@ -75,20 +73,46 @@ export type SearchOptions = {
      */
     searchEngine?: SearchEngine;
     /**
-     * Response format (default: "raw")
-     * Available values:
-     * - "raw": Returns HTML string of search results page
-     * - "json": Returns structured search results object
+     * Zone identifier (default: auto-configured serp_zone)
+     * @example 'serp_api_1' | 'my_search_zone'
      */
-    responseFormat?: 'json' | 'raw';
+    zone?: string;
+} & BaseScrapeOptions;
+
+export interface BdClientOptions {
     /**
-     * Additional format transformation (default: "markdown")
-     * Available values: 'markdown' | 'html' | 'text' | 'json'
+     * Your Bright Data API key (can also be set via BRIGHTDATA_API_KEY env var)
+     * @example 'brd-customer-hl_12345678-zone-web_unlocker:abc123xyz'
      */
-    dataFormat?: 'markdown' | 'html' | 'text' | 'json';
+    apiKey?: string;
     /**
-     * Two-letter ISO country code for search region (default: "")
-     * @example 'us' | 'gb' | 'de' | 'jp' | 'au' | 'ca' | 'fr' | 'it' | 'es' | 'br' | 'in' | ''
+     * Automatically create required zones if they don't exist (default: true)
+     * @example true | false
      */
-    country?: string;
-} & FetchingOptions;
+    autoCreateZones?: boolean;
+    /**
+     * Custom zone name for web unlocker (default: from env or 'sdk_unlocker')
+     * @example 'my_web_zone' | 'web_unlocker_1' | 'scraping_zone'
+     */
+    webUnlockerZone?: string;
+    /**
+     * Custom zone name for SERP API (default: from env or 'sdk_serp')
+     * @example 'my_serp_zone' | 'search_zone' | 'serp_api_1'
+     */
+    serpZone?: string;
+    /**
+     * Log level (default: 'INFO')
+     * Available values: 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL'
+     */
+    logLevel?: 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL';
+    /**
+     * Use structured JSON logging (default: true)
+     * @example true (JSON format) | false (plain text)
+     */
+    structuredLogging?: boolean;
+    /**
+     * Enable verbose logging (default: false)
+     * @example true | false
+     */
+    verbose?: boolean;
+}

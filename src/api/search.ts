@@ -1,14 +1,5 @@
 import { request } from 'undici';
 import { REQUEST_API_URL } from '../utils/constants';
-import {
-    validateZoneName,
-    validateCountryCode,
-    validateTimeout,
-    validateSearchEngine,
-    validateQuery,
-    validateResponseFormat,
-    validateResponseSize,
-} from '../utils/validation';
 import { safeJsonParse } from '../utils/misc';
 import { getLogger, logRequest } from '../utils/logging-config';
 import {
@@ -18,45 +9,46 @@ import {
 } from '../exceptions/errors';
 import { getDispatcher, isResponseOk } from '../utils/net';
 import { getAuthHeaders } from '../utils/auth';
+import { ZoneNameSchema } from '../schemas';
 import type { SearchOptions, SearchEngine } from '../types';
+import type { ZoneManager } from '../utils/zone-manager';
 
 const logger = getLogger('api.search');
 
 const toSEUrl = (searchEngine: SearchEngine, query: string) => {
-    const encoded_query = encodeURIComponent(query.trim());
+    const encodedQuery = encodeURIComponent(query.trim());
 
     switch (searchEngine.toLowerCase()) {
         case 'bing':
-            return `https://www.bing.com/search?q=${encoded_query}`;
+            return `https://www.bing.com/search?q=${encodedQuery}`;
         case 'yandex':
-            return `https://yandex.com/search/?text=${encoded_query}`;
+            return `https://yandex.com/search/?text=${encodedQuery}`;
         case 'google':
         default:
-            return `https://www.google.com/search?q=${encoded_query}`;
+            return `https://www.google.com/search?q=${encodedQuery}`;
     }
 };
 
-export class SearchAPI {
-    private apiKey: string;
+interface SearchAPIOptions {
+    apiKey: string;
+    zoneManager: ZoneManager;
+    autoCreateZones?: boolean;
+    zone?: string;
+}
 
-    constructor(apiKey: string) {
-        this.apiKey = apiKey;
+export class SearchAPI {
+    private authHeaders: ReturnType<typeof getAuthHeaders>;
+    private zoneManager: ZoneManager;
+    private zone?: string;
+
+    constructor(opts: SearchAPIOptions) {
+        this.zone = opts.zone;
+        this.authHeaders = getAuthHeaders(opts.apiKey);
+        this.zoneManager = opts.zoneManager;
     }
 
     async search(query: string | string[], opt: SearchOptions = {}) {
-        const {
-            searchEngine = 'google',
-            responseFormat = 'raw',
-            country = '',
-            timeout = null,
-        } = opt;
-
-        validateQuery(query);
-        validateZoneName(opt.zone);
-        validateSearchEngine(searchEngine);
-        validateResponseFormat(responseFormat);
-        validateCountryCode(country);
-        validateTimeout(timeout);
+        ZoneNameSchema.parse(opt.zone || this.zone);
 
         if (Array.isArray(query)) {
             logger.info(
@@ -72,10 +64,9 @@ export class SearchAPI {
         logger.info(`Starting single query search: ${query}`);
         return this.searchSingle(query, opt);
     }
-
     private async searchSingle(query: string, opt: SearchOptions = {}) {
         const {
-            zone,
+            zone = this.zone,
             searchEngine = 'google',
             responseFormat = 'raw',
             country = '',
@@ -104,13 +95,11 @@ export class SearchAPI {
             const response = await request(REQUEST_API_URL, {
                 method: 'POST',
                 body: JSON.stringify(requestData),
-                headers: getAuthHeaders(this.apiKey),
+                headers: this.authHeaders,
                 dispatcher: getDispatcher({ timeout }),
             });
 
             const response_data = await response.body.text();
-
-            validateResponseSize(response_data);
 
             if (response.statusCode >= 400) {
                 if (response.statusCode == 401)
@@ -144,7 +133,7 @@ export class SearchAPI {
         logger.info(`Processing ${queries.length} queries in parallel`);
 
         const {
-            zone,
+            zone = this.zone,
             searchEngine = 'google',
             responseFormat = 'json',
             country = '',
@@ -154,7 +143,7 @@ export class SearchAPI {
 
         const requests = queries.map((query) => {
             const requestBody: Record<string, unknown> = {
-                zone: zone,
+                zone,
                 url: toSEUrl(searchEngine, query),
                 format: responseFormat,
                 method: 'GET',
@@ -170,7 +159,7 @@ export class SearchAPI {
 
             return request(REQUEST_API_URL, {
                 method: 'POST',
-                headers: getAuthHeaders(this.apiKey),
+                headers: this.authHeaders,
                 body: JSON.stringify(requestBody),
                 signal: controller.signal,
                 dispatcher: getDispatcher(),

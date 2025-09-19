@@ -1,6 +1,5 @@
 import { request } from 'undici';
 import { getLogger } from './logging-config';
-import { validateZoneName } from './validation';
 import { ZONE_API_URL } from './constants';
 import { getAuthHeaders } from './auth';
 import { ZoneError, AuthenticationError, APIError } from '../exceptions/errors';
@@ -9,6 +8,7 @@ import type { ZoneInfo, ZoneInfoResponse } from '../types';
 const logger = getLogger('utils.zone-manager');
 
 interface ZoneCreationOpts {
+    type?: 'static' | 'unblocker';
     domain_whitelist?: string;
     ips_type?: string;
     bandwidth?: string;
@@ -30,24 +30,23 @@ interface ZoneCreationOpts {
     solve_captcha_disable?: boolean;
 }
 
-export class ZoneManager {
-    private base_url: string;
-    private headers: Record<string, string> | null;
+interface ZoneManagerOpts {
+    apiKey: string;
+}
 
-    constructor(apiKey: string) {
-        this.base_url = ZONE_API_URL;
-        this.headers = getAuthHeaders(apiKey);
+export class ZoneManager {
+    private authHeaders: Record<string, string>;
+
+    constructor(opts: ZoneManagerOpts) {
+        this.authHeaders = getAuthHeaders(opts.apiKey);
     }
-    async list_zones(): Promise<ZoneInfo[]> {
+    async listZones(): Promise<ZoneInfo[]> {
         logger.info('Fetching list of active zones');
 
         try {
-            const response = await request(
-                `${this.base_url}/get_active_zones`,
-                {
-                    headers: this.headers,
-                },
-            );
+            const response = await request(`${ZONE_API_URL}/get_active_zones`, {
+                headers: this.authHeaders,
+            });
 
             const zones = (await response.body.json()) as ZoneInfoResponse[];
 
@@ -80,10 +79,9 @@ export class ZoneManager {
         }
     }
     private async isZoneExists(zone_name: string) {
-        validateZoneName(zone_name);
         logger.debug(`Checking if zone exists: ${zone_name}`);
         try {
-            const zones = await this.list_zones();
+            const zones = await this.listZones();
             const exists = zones.some((zone) => zone.name == zone_name);
             logger.debug(
                 `Zone ${zone_name} ${exists ? 'exists' : 'does not exist'}`,
@@ -94,21 +92,17 @@ export class ZoneManager {
             return false;
         }
     }
-    private async createZone(
-        zone_name: string,
-        zone_type = 'static',
-        opt: ZoneCreationOpts = {},
-    ) {
-        validateZoneName(zone_name);
-        logger.info(`Creating zone: ${zone_name} (type: ${zone_type})`);
+    private async createZone(zoneName: string, opt: ZoneCreationOpts = {}) {
+        const { type: zoneType = 'static' } = opt;
+        logger.info(`Creating zone: ${zoneName} (type: ${zoneType})`);
 
-        const zone_data = {
+        const zoneData = {
             zone: {
-                name: zone_name,
-                type: zone_type,
+                name: zoneName,
+                type: zoneType,
             },
             plan: {
-                type: zone_type,
+                type: zoneType,
                 domain_whitelist: opt.domain_whitelist || '',
                 ips_type: opt.ips_type || 'shared',
                 bandwidth: opt.bandwidth || 'bandwidth',
@@ -132,13 +126,13 @@ export class ZoneManager {
         };
 
         try {
-            const response = await request(this.base_url, {
-                headers: this.headers,
+            const response = await request(ZONE_API_URL, {
+                headers: this.authHeaders,
                 method: 'POST',
-                body: JSON.stringify(zone_data),
+                body: JSON.stringify(zoneData),
             });
 
-            logger.info(`Successfully created zone: ${zone_name}`);
+            logger.info(`Successfully created zone: ${zoneName}`);
 
             return await response.body.json();
         } catch (e: any) {
@@ -146,9 +140,9 @@ export class ZoneManager {
                 const error_message = e.response.data?.message || e.message;
                 if (error_message.includes('already exists')) {
                     logger.info(
-                        `Zone ${zone_name} already exists, skipping creation`,
+                        `Zone ${zoneName} already exists, skipping creation`,
                     );
-                    return { name: zone_name, status: 'exists' };
+                    return { name: zoneName, status: 'exists' };
                 }
                 throw new ZoneError(
                     'Invalid zone configuration: ' + `${error_message}`,
@@ -165,14 +159,14 @@ export class ZoneManager {
                         'create zones. API key needs admin access.',
                 );
             throw new ZoneError(
-                `Failed to create zone ${zone_name}: ` + `${e.message}`,
+                `Failed to create zone ${zoneName}: ` + `${e.message}`,
             );
         }
     }
-    async ensureRequiredZones(webUnlockerZone: string, serp_zone: string) {
+    async ensureRequiredZones(webUnlockerZone: string, serpZone: string) {
         logger.info('Ensuring required zones exist', {
             webUnlockerZone,
-            serp_zone,
+            serpZone,
         });
         const results = {
             web_unlocker: {
@@ -180,34 +174,35 @@ export class ZoneManager {
                 exists: false,
                 created: false,
             },
-            serp: { zone: serp_zone, exists: false, created: false },
+            serp: { zone: serpZone, exists: false, created: false },
         };
         try {
             results.web_unlocker.exists =
                 await this.isZoneExists(webUnlockerZone);
             if (!results.web_unlocker.exists) {
                 logger.info(`Creating web unlocker zone: ${webUnlockerZone}`);
-                await this.createZone(webUnlockerZone, 'unblocker');
+                await this.createZone(webUnlockerZone, { type: 'unblocker' });
                 results.web_unlocker.created = true;
             } else
                 logger.info(
                     'Web unlocker zone already exists: ' + `${webUnlockerZone}`,
                 );
-            results.serp.exists = await this.isZoneExists(serp_zone);
+            results.serp.exists = await this.isZoneExists(serpZone);
             if (!results.serp.exists) {
-                logger.info(`Creating SERP zone: ${serp_zone}`);
-                await this.createZone(serp_zone, 'unblocker', {
+                logger.info(`Creating SERP zone: ${serpZone}`);
+                await this.createZone(serpZone, {
+                    type: 'unblocker',
                     is_serp_zone: true,
                 });
                 results.serp.created = true;
-            } else logger.info(`SERP zone already exists: ${serp_zone}`);
+            } else logger.info(`SERP zone already exists: ${serpZone}`);
             logger.info('Zone validation completed', results);
             return results;
         } catch (e: any) {
             logger.error('Failed to ensure required zones exist', {
                 error: e.message,
                 webUnlockerZone,
-                serp_zone,
+                serpZone,
             });
             logger.warning(
                 'Continuing with existing zones despite creation ' + 'failures',

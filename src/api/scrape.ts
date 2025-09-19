@@ -1,15 +1,5 @@
 import { request } from 'undici';
 import { REQUEST_API_URL } from '../utils/constants';
-import {
-    validateUrl,
-    validateZoneName,
-    validateCountryCode,
-    validateTimeout,
-    validateUrlList,
-    validateResponseFormat,
-    validateHttpMethod,
-    validateResponseSize,
-} from '../utils/validation';
 import { safeJsonParse } from '../utils/misc';
 import { getLogger, logRequest } from '../utils/logging-config';
 import {
@@ -19,33 +9,39 @@ import {
 } from '../exceptions/errors';
 import { getDispatcher, isResponseOk } from '../utils/net';
 import { getAuthHeaders } from '../utils/auth';
+import { ZoneNameSchema } from '../schemas';
 import type { ScrapeOptions } from '../types';
+import type { ZoneManager } from '../utils/zone-manager';
 
 const logger = getLogger('api.scraper');
 
-export class WebScraper {
-    private apiKey: string;
+interface WebScraperOptions {
+    apiKey: string;
+    zoneManager: ZoneManager;
+    autoCreateZones?: boolean;
+    zone?: string;
+}
 
-    constructor(apiKey: string) {
-        this.apiKey = apiKey;
+export class WebScraper {
+    private authHeaders: ReturnType<typeof getAuthHeaders>;
+    private zone?: string;
+    private zoneManager: ZoneManager;
+
+    constructor(opts: WebScraperOptions) {
+        this.zone = opts.zone;
+        this.authHeaders = getAuthHeaders(opts.apiKey);
+        this.zoneManager = opts.zoneManager;
     }
 
     async scrape(url: string | string[], opt: ScrapeOptions = {}) {
-        validateZoneName(opt.zone);
-        validateResponseFormat(opt.responseFormat);
-        validateHttpMethod(opt.method);
-        validateCountryCode(opt.country);
-        validateTimeout(opt.timeout);
+        ZoneNameSchema.parse(opt.zone || this.zone);
 
         if (Array.isArray(url)) {
-            validateUrlList(url);
             logger.info(
                 `Starting batch scraping operation for ${url.length} URLs`,
             );
             return this.scrapeBatch(url, opt);
         }
-
-        validateUrl(url);
 
         logger.info(`Starting single URL scraping: ${url}`);
 
@@ -83,13 +79,11 @@ export class WebScraper {
             const response = await request(REQUEST_API_URL, {
                 method: 'POST',
                 body: JSON.stringify(requestData),
-                headers: getAuthHeaders(this.apiKey),
+                headers: this.authHeaders,
                 dispatcher: getDispatcher({ timeout }),
             });
 
             const response_data = await response.body.text();
-
-            validateResponseSize(response_data);
 
             if (response.statusCode >= 400) {
                 if (response.statusCode === 401) {
@@ -149,7 +143,7 @@ export class WebScraper {
 
             return request(REQUEST_API_URL, {
                 method: 'POST',
-                headers: getAuthHeaders(this.apiKey),
+                headers: this.authHeaders,
                 body: JSON.stringify(requestBody),
                 dispatcher: getDispatcher(),
             });

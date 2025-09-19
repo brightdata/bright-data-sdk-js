@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import { z } from 'zod';
 import './config';
 import { WebScraper } from './api/scrape';
 import { SearchAPI } from './api/search';
@@ -12,143 +11,222 @@ import {
 } from './utils/constants';
 import { ValidationError } from './exceptions/errors';
 import { isTrueLike } from './utils/misc';
-import { ClientOptionsSchema, ApiKeySchema } from './schemas';
-import type { ZoneInfo, ScrapeOptions, SearchOptions } from './types';
+import {
+    ClientOptionsSchema,
+    ApiKeySchema,
+    ScrapeOptionsSchema,
+    SearchOptionsSchema,
+    SearchQueryParamSchema,
+    URLParamSchema,
+} from './schemas';
+import type {
+    ZoneInfo,
+    ScrapeOptions,
+    SearchOptions,
+    BdClientOptions,
+} from './types';
 
 const logger = getLogger('client');
 
-interface BdClientOptions {
-    /**
-     * Your Bright Data API key (can also be set via BRIGHTDATA_API_KEY env var)
-     * @example 'brd-customer-hl_12345678-zone-web_unlocker:abc123xyz'
-     */
-    apiKey?: string;
-    /**
-     * Automatically create required zones if they don't exist (default: true)
-     * @example true | false
-     */
-    autoCreateZones?: boolean;
-    /**
-     * Custom zone name for web unlocker (default: from env or 'sdk_unlocker')
-     * @example 'my_web_zone' | 'web_unlocker_1' | 'scraping_zone'
-     */
-    webUnlockerZone?: string;
-    /**
-     * Custom zone name for SERP API (default: from env or 'sdk_serp')
-     * @example 'my_serp_zone' | 'search_zone' | 'serp_api_1'
-     */
-    serpZone?: string;
-    /**
-     * Log level (default: 'INFO')
-     * Available values: 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL'
-     */
-    logLevel?: 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL';
-    /**
-     * Use structured JSON logging (default: true)
-     * @example true (JSON format) | false (plain text)
-     */
-    structuredLogging?: boolean;
-    /**
-     * Enable verbose logging (default: false)
-     * @example true | false
-     */
-    verbose?: boolean;
-}
-
 export class bdclient {
     private apiKey!: string;
-    private webUnlockerZone: string;
-    private serpZone: string;
-    private autoCreateZones: boolean;
     private webScraper: WebScraper;
     private searchApi: SearchAPI;
     private zoneManager: ZoneManager;
-
+    /**
+     * Create a new bdclient instance
+     *
+     * @param opt Configuration options for the client
+     *
+     * @example
+     * ```javascript
+     * // Basic usage
+     * const client = new bdclient({
+     *     api_token: 'your-api-token'
+     * });
+     *
+     * // Advanced configuration
+     * const client = new bdclient({
+     *     api_token: 'brd-customer-hl_12345-zone-web:abc123',
+     *     auto_create_zones: true,
+     *     web_unlocker_zone: 'my_web_zone',
+     *     serp_zone: 'my_serp_zone',
+     *     log_level: 'DEBUG',
+     *     verbose: true
+     * });
+     *
+     * // Using environment variables
+     * process.env.BRIGHTDATA_API_TOKEN = 'your-token';
+     * const client = new bdclient(); // Automatically uses env var
+     * ```
+     */
     constructor(options: BdClientOptions) {
         const opt = ClientOptionsSchema.parse(options || {});
-        const is_verbose = opt.verbose
+        const isVerbose = opt.verbose
             ? opt.verbose
             : isTrueLike(process.env.BRIGHTDATA_VERBOSE || '');
-
-        setupLogging(opt.logLevel, opt.structuredLogging, is_verbose);
-
+        setupLogging(opt.logLevel, opt.structuredLogging, isVerbose);
         logger.info('Initializing Bright Data SDK client');
-
         this.apiKey = ApiKeySchema.parse(
             opt.apiKey || process.env.BRIGHTDATA_API_KEY,
         );
-
         const keyPreview =
             this.apiKey.length > 8
                 ? `${this.apiKey.slice(0, 4)}***${this.apiKey.slice(-4)}`
                 : '***';
-
         logger.info(`API key validated successfully: ${keyPreview}`);
-
-        this.webUnlockerZone =
-            opt.webUnlockerZone ||
-            process.env.WEB_UNLOCKER_ZONE ||
-            DEFAULT_WEB_UNLOCKER_ZONE;
-        this.serpZone =
-            opt.serpZone || process.env.SERP_ZONE || DEFAULT_SERP_ZONE;
-        this.autoCreateZones = opt.autoCreateZones;
-
         logger.info('HTTP client configured with secure headers');
-
-        this.webScraper = new WebScraper(this.apiKey);
-        this.searchApi = new SearchAPI(this.apiKey);
-        this.zoneManager = new ZoneManager(this.apiKey);
+        this.zoneManager = new ZoneManager({ apiKey: this.apiKey });
+        this.webScraper = new WebScraper({
+            apiKey: this.apiKey,
+            zoneManager: this.zoneManager,
+            autoCreateZones: opt.autoCreateZones,
+            zone:
+                opt.webUnlockerZone ||
+                process.env.WEB_UNLOCKER_ZONE ||
+                DEFAULT_WEB_UNLOCKER_ZONE,
+        });
+        this.searchApi = new SearchAPI({
+            apiKey: this.apiKey,
+            zoneManager: this.zoneManager,
+            autoCreateZones: opt.autoCreateZones,
+            zone: opt.serpZone || process.env.SERP_ZONE || DEFAULT_SERP_ZONE,
+        });
     }
-    async init() {
-        if (this.autoCreateZones) {
-            await this.ensureZones();
-        }
-    }
-    async scrape(url: string | string[], opt: ScrapeOptions = {}) {
-        const {
-            zone,
-            responseFormat = 'raw',
-            method = 'GET',
-            country = '',
-            dataFormat = 'markdown',
-            timeout,
-        } = opt;
+    /**
+     * Scrape a single URL using Bright Data Web Unlocker API
+     *
+     * Bypasses anti-bot protection and returns website content
+     *
+     * @param url Single URL string to scrape
+     * @param opt Scraping options
+     * @returns Promise resolving to scraped data (HTML string or JSON object)
+     *
+     * @example
+     * ```javascript
+     * // Simple scraping (returns HTML)
+     * const html =  await client.scrape('https://example.com');
+     *
+     * // Get structured JSON data
+     * const data =  await client.scrape('https://example.com', {
+     *     responseFormat: 'json'
+     * });
+     *
+     * // Advanced options
+     * const result =  await client.scrape('https://example.com', {
+     *     method: 'GET',                 // 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
+     *     country: 'us',                 // 'us' | 'gb' | 'de' | 'jp' etc.
+     *     responseFormat: 'raw',         // 'raw' | 'json'
+     *     dataFormat: 'markdown',        // 'markdown' | 'screenshot'
+     *     timeout: 30000,                // 5000-300000 milliseconds
+     *     zone: 'my_custom_zone'         // Custom zone name
+     * });
+     *
+     * // E-commerce scraping
+     * const productData =  client.scrape('https://amazon.com/dp/B123', {
+     *     responseFormat: 'json',
+     *     country: 'us'
+     * });
+     * ```
+     */
+    async scrape(url: string | string[], options: ScrapeOptions = {}) {
+        const safeUrl = URLParamSchema.parse(url);
+        const safeOptions = ScrapeOptionsSchema.parse(options);
         logger.info(
             'Starting scrape operation for ' +
                 `${Array.isArray(url) ? url.length : 1} URL(s)`,
         );
-
-        return this.webScraper.scrape(url, {
-            responseFormat,
-            method,
-            country,
-            dataFormat,
-            zone: zone || this.webUnlockerZone,
-            timeout,
-        });
+        return this.webScraper.scrape(safeUrl, safeOptions);
     }
-    async search(query: string | string[], opt: SearchOptions = {}) {
-        const {
-            zone,
-            searchEngine = 'google',
-            responseFormat = 'raw',
-            country = '',
-            timeout,
-        } = opt;
-
+    /**
+     * Search using a single query via Bright Data SERP API
+     *
+     * Performs web search on Google, Bing, or Yandex with anti-bot protection bypass
+     *
+     * @param query Search query string
+     * @param opt Search options
+     * @returns Promise resolving to search results (HTML or structured data)
+     *
+     * @example
+     * ```javascript
+     * // Simple Google search
+     * const results =  await client.search('pizza restaurants');
+     *
+     * // Structured search results
+     * const data =  await client.search('best laptops 2024', {
+     *     responseFormat: 'json'
+     * });
+     *
+     * // Advanced search options
+     * const results =  await client.search('machine learning courses', {
+     *     searchEngine: 'bing',         // 'google' | 'bing' | 'yandex'
+     *     country: 'us',                 // 'us' | 'gb' | 'de' | 'jp' etc.
+     *     responseFormat: 'json',        // 'raw' | 'json'
+     *     dataFormat: 'markdown',        // 'markdown' | 'screenshot'
+     *     timeout: 20000,                // 5000-300000 milliseconds
+     *     zone: 'my_serp_zone'           // Custom zone
+     * });
+     *
+     * // Different search engines
+     * const googleResults =  await client.search('nodejs tutorial', {
+     *     searchEngine: 'google',
+     *     country: 'us'
+     * });
+     *
+     * const bingResults =  await client.search('nodejs tutorial', {
+     *     searchEngine: 'bing',
+     *     country: 'us'
+     * });
+     *
+     * const yandexResults =  await client.search('nodejs tutorial', {
+     *     searchEngine: 'yandex',
+     *     country: 'ru'
+     * });
+     * ```
+     */
+    async search(query: string | string[], options: SearchOptions = {}) {
+        const safeQuery = SearchQueryParamSchema.parse(query);
+        const safeOptions = SearchOptionsSchema.parse(options);
         logger.info(
             'Starting search operation for ' +
-                `${Array.isArray(query) ? query.length : 1} query/queries`,
+                `${Array.isArray(safeQuery) ? safeQuery.length : 1} safeQuery/queries`,
         );
-
-        return this.searchApi.search(query, {
-            zone: zone || this.serpZone,
-            searchEngine,
-            responseFormat,
-            country,
-            timeout,
-        });
+        return this.searchApi.search(safeQuery, safeOptions);
     }
+    /**
+     * Download content to a local file
+     *
+     * Saves scraped data or search results to disk in various formats
+     *
+     * @param content Content to save (any data structure)
+     * @param filename Output filename (auto-generated if null)
+     * @param format File format (default: 'json')
+     * @returns Promise resolving to the file path where content was saved
+     *
+     * @example
+     * ```javascript
+     * // Save scraped data as JSON
+     * const data =  client.scrape('https://example.com');
+     * const filePath =  client.download_content(data, 'scraped_data.json', 'json');
+     *
+     * // Auto-generate filename
+     * const filePath =  client.download_content(data, null, 'json');
+     * // Creates: brightdata_content_2024-01-15T10-30-45-123Z.json
+     *
+     * // Save as CSV (for array of objects)
+     * const products =  client.scrape(productUrls, { response_format: 'json' });
+     * const csvPath =  client.download_content(products, 'products.csv', 'csv');
+     *
+     * // Save as plain text
+     * const html =  client.scrape('https://example.com');
+     * const txtPath =  client.download_content(html, 'page.txt', 'txt');
+     *
+     * // Different formats
+     *  client.download_content(data, 'data.json', 'json');  // JSON format
+     *  client.download_content(data, 'data.csv', 'csv');    // CSV format
+     *  client.download_content(data, 'data.txt', 'txt');    // Text format
+     * ```
+     */
     downloadContent(
         content: any,
         filename: string | null = null,
@@ -302,29 +380,42 @@ export class bdclient {
             }
         }
     }
-    async ensureZones() {
-        try {
-            logger.info('Ensuring required zones exist for synchronous client');
-            const results = await this.zoneManager.ensureRequiredZones(
-                this.webUnlockerZone,
-                this.serpZone,
-            );
-
-            if (results.web_unlocker.created || results.serp.created) {
-                logger.info(
-                    'Zone auto-creation completed successfully',
-                    results,
-                );
-            }
-        } catch (e: any) {
-            logger.warning(
-                `Zone auto-creation failed: ${e.message}. Continuing with existing zones.`,
-            );
-        }
-    }
+    /**
+     * List all active zones in your Bright Data account
+     *
+     * Retrieves information about available proxy zones and their status
+     *
+     * @returns Promise resolving to array of zone objects with details
+     *
+     * @example
+     * ```javascript
+     * // List all zones
+     * const zones =  client.listZones();
+     *
+     * // Process zone information
+     * zones.forEach(zone => {
+     *     console.log(`Zone: ${zone.name}`);
+     *     console.log(`Type: ${zone.type}`);
+     *     console.log(`Status: ${zone.status}`);
+     *     console.log(`IPs: ${zone.ips}`);
+     *     console.log(`Bandwidth: ${zone.bandwidth}`);
+     *     console.log('---');
+     * });
+     *
+     * // Find specific zone
+     * const webZone = zones.find(z => z.name === 'web_unlocker_1');
+     * if (webZone) {
+     *     console.log(`Found zone: ${webZone.name}, Status: ${webZone.status}`);
+     * }
+     *
+     * // Check zone availability
+     * const activeZones = zones.filter(z => z.status === 'active');
+     * console.log(`Active zones: ${activeZones.length}`);
+     * ```
+     */
     async listZones(): Promise<ZoneInfo[]> {
         try {
-            return await this.zoneManager.list_zones();
+            return await this.zoneManager.listZones();
         } catch (e: any) {
             logger.error(`Failed to list zones: ${e.message}`);
             return [];
