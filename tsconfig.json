@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "target": "es2022",
+        "moduleDetection": "force",
+        "isolatedModules": true,
+        "module": "NodeNext",
+        "outDir": "dist",
+        "declaration": true,
+        "lib": ["es2022"]
+    },
+    "include": ["src/**/*.ts"],
+    "exclude": ["node_modules"]
+}

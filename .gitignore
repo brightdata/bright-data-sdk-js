@@ -94,3 +94,5 @@ Thumbs.db
 # Logs
 logs
 *.log
+test.mjs
+test.js
