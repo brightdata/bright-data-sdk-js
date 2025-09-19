@@ -1,4 +1,3 @@
-import { request } from 'undici';
 import { REQUEST_API_URL } from '../utils/constants';
 import { safeJsonParse } from '../utils/misc';
 import { getLogger, logRequest } from '../utils/logging-config';
@@ -7,8 +6,9 @@ import {
     APIError,
     AuthenticationError,
 } from '../exceptions/errors';
-import { getDispatcher, isResponseOk } from '../utils/net';
+import { request, getDispatcher, isResponseOk } from '../utils/net';
 import { getAuthHeaders } from '../utils/auth';
+import { dropEmptyKeys } from '../utils/misc';
 import { ZoneNameSchema } from '../schemas';
 import type { ScrapeOptions } from '../types';
 import type { ZoneManager } from '../utils/zone-manager';
@@ -34,45 +34,35 @@ export class WebScraper {
     }
 
     async scrape(url: string | string[], opt: ScrapeOptions = {}) {
-        ZoneNameSchema.parse(opt.zone || this.zone);
+        const zone = ZoneNameSchema.parse(opt.zone || this.zone);
 
         if (Array.isArray(url)) {
             logger.info(
                 `Starting batch scraping operation for ${url.length} URLs`,
             );
-            return this.scrapeBatch(url, opt);
+            return this.scrapeBatch(url, zone, opt);
         }
 
         logger.info(`Starting single URL scraping: ${url}`);
 
-        return this.scrapeSingle(url, opt);
+        return this.scrapeSingle(url, zone, opt);
     }
 
-    private async scrapeSingle(url: string, opt: ScrapeOptions = {}) {
-        const {
-            zone,
-            responseFormat = 'raw',
-            method = 'GET',
-            country = '',
-            dataFormat = 'markdown',
-            timeout = null,
-        } = opt;
-
+    private async scrapeSingle(
+        url: string,
+        zone: string,
+        opt: ScrapeOptions = {},
+    ) {
         const requestData: Record<string, unknown> = {
             url,
             zone,
-            format: responseFormat,
-            method: method.toUpperCase(),
-            country: country.toLowerCase(),
-            data_format: dataFormat,
+            format: opt.responseFormat || 'raw',
+            method: opt.method?.toUpperCase(),
+            country: opt.country?.toLowerCase(),
+            data_format: opt.dataFormat || 'markdown',
         };
 
-        Object.keys(requestData).forEach((key) => {
-            if (!requestData[key]) {
-                delete requestData[key];
-            }
-        });
-
+        dropEmptyKeys(requestData);
         logRequest('POST', REQUEST_API_URL, requestData);
 
         try {
@@ -80,7 +70,7 @@ export class WebScraper {
                 method: 'POST',
                 body: JSON.stringify(requestData),
                 headers: this.authHeaders,
-                dispatcher: getDispatcher({ timeout }),
+                dispatcher: getDispatcher({ timeout: opt.timeout }),
             });
 
             const response_data = await response.body.text();
@@ -101,9 +91,10 @@ export class WebScraper {
                 );
             }
 
-            if (responseFormat === 'json') {
+            if (opt.responseFormat === 'json') {
                 return safeJsonParse(response_data);
             }
+
             return response_data;
         } catch (e: any) {
             if (
@@ -117,34 +108,29 @@ export class WebScraper {
         }
     }
 
-    private async scrapeBatch(urls: string[], opt: ScrapeOptions = {}) {
+    private async scrapeBatch(
+        urls: string[],
+        zone: string,
+        opt: ScrapeOptions = {},
+    ) {
         logger.info(`Processing ${urls.length} URLs in parallel`);
 
-        const {
-            zone,
-            responseFormat = 'raw',
-            method = 'GET',
-            country = '',
-            dataFormat = 'markdown',
-        } = opt;
-
         const requests = urls.map((url) => {
-            const requestBody: Record<string, unknown> = {
-                zone,
+            const requestData: Record<string, unknown> = {
                 url,
-                format: responseFormat,
-                method: method.toUpperCase(),
-                data_format: dataFormat,
+                zone,
+                format: opt.responseFormat || 'raw',
+                method: opt.method?.toUpperCase(),
+                data_format: opt.dataFormat || 'markdown',
+                country: opt.country?.toLowerCase(),
             };
 
-            if (country) {
-                requestBody.country = country.toLowerCase();
-            }
+            dropEmptyKeys(requestData);
 
             return request(REQUEST_API_URL, {
                 method: 'POST',
                 headers: this.authHeaders,
-                body: JSON.stringify(requestBody),
+                body: JSON.stringify(requestData),
                 dispatcher: getDispatcher(),
             });
         });
@@ -167,7 +153,7 @@ export class WebScraper {
                     }
 
                     let data;
-                    if (responseFormat === 'json') {
+                    if (opt.responseFormat === 'json') {
                         data = await response.body.json();
                     } else {
                         data = await response.body.text();

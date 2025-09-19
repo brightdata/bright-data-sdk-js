@@ -1,4 +1,9 @@
-import { type Dispatcher, Agent, interceptors } from 'undici';
+import {
+    type Dispatcher,
+    Agent,
+    interceptors,
+    request as lib_request,
+} from 'undici';
 import {
     DEFAULT_TIMEOUT,
     MAX_RETRIES,
@@ -25,6 +30,9 @@ export const getDispatcher = (params: GetDispatcherOptions = {}) => {
         }),
     );
 };
+
+export const request: typeof lib_request = async (url, opts) =>
+    lib_request(url, opts);
 
 export const isResponseOk = (response: Dispatcher.ResponseData): boolean =>
     response.statusCode >= 200 && response.statusCode < 300;

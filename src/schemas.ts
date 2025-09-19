@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import { ValidationError } from './exceptions/errors';
 
 export const ApiKeySchema = z
     .string()
-    .min(1, 'API key appears to be invalid (too short)');
+    .min(10, 'API key appears to be invalid (too short)');
 
 const SearchQuerySchema = z
     .string('Invalid URL format')
@@ -91,3 +92,15 @@ export const SearchOptionsSchema = z
         searchEngine: z.enum(['google', 'bing', 'yandex']).optional(),
     })
     .optional();
+
+export function assertSchema<K>(
+    schema: z.ZodType<K>,
+    input: unknown,
+): z.infer<typeof schema> {
+    const inputParsed = schema.safeParse(input);
+
+    if (!inputParsed.success)
+        throw new ValidationError(z.prettifyError(inputParsed.error));
+
+    return inputParsed.data;
+}

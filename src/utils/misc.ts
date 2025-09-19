@@ -20,3 +20,14 @@ export function safeJsonParse(data: unknown) {
 
 export const isTrueLike = (val: unknown) =>
     ['true', '1', 'yes', 'on'].includes(String(val).toLowerCase());
+
+export const dropEmptyKeys = (obj: Record<string, unknown>) => {
+    for (const key in obj) {
+        if (obj[key] === undefined || obj[key] === null || obj[key] === '') {
+            delete obj[key];
+        }
+    }
+};
+
+export const maskKey = (key: string) =>
+    key.length > 8 ? `***${key.slice(-4)}` : '***';

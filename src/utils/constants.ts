@@ -7,7 +7,7 @@ try {
     const packagePath = path.join(__dirname, '../../package.json');
     const packageData = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
     version = packageData.version;
-} catch (e) {
+} catch {
     // Fallback version if package.json can't be read
     version = '1.1.0';
 }

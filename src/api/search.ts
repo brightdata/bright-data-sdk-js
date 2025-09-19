@@ -1,4 +1,3 @@
-import { request } from 'undici';
 import { REQUEST_API_URL } from '../utils/constants';
 import { safeJsonParse } from '../utils/misc';
 import { getLogger, logRequest } from '../utils/logging-config';
@@ -7,7 +6,8 @@ import {
     APIError,
     AuthenticationError,
 } from '../exceptions/errors';
-import { getDispatcher, isResponseOk } from '../utils/net';
+import { request, getDispatcher, isResponseOk } from '../utils/net';
+import { dropEmptyKeys } from '../utils/misc';
 import { getAuthHeaders } from '../utils/auth';
 import { ZoneNameSchema } from '../schemas';
 import type { SearchOptions, SearchEngine } from '../types';
@@ -15,7 +15,7 @@ import type { ZoneManager } from '../utils/zone-manager';
 
 const logger = getLogger('api.search');
 
-const toSEUrl = (searchEngine: SearchEngine, query: string) => {
+const toSEUrl = (searchEngine: SearchEngine = 'google', query: string) => {
     const encodedQuery = encodeURIComponent(query.trim());
 
     switch (searchEngine.toLowerCase()) {
@@ -48,47 +48,37 @@ export class SearchAPI {
     }
 
     async search(query: string | string[], opt: SearchOptions = {}) {
-        ZoneNameSchema.parse(opt.zone || this.zone);
+        const zone = ZoneNameSchema.parse(opt.zone || this.zone);
 
         if (Array.isArray(query)) {
             logger.info(
                 `Starting batch search operation for ${query.length} queries`,
             );
 
-            return this.searchBatch(query, opt);
+            return this.searchBatch(query, zone, opt);
         }
 
         if (typeof query !== 'string' || query.trim() == '')
             throw new ValidationError('Query must be a non-empty string');
 
         logger.info(`Starting single query search: ${query}`);
-        return this.searchSingle(query, opt);
+        return this.searchSingle(query, zone, opt);
     }
-    private async searchSingle(query: string, opt: SearchOptions = {}) {
-        const {
-            zone = this.zone,
-            searchEngine = 'google',
-            responseFormat = 'raw',
-            country = '',
-            dataFormat = 'markdown',
-            timeout = null,
-        } = opt;
-
+    private async searchSingle(
+        query: string,
+        zone: string,
+        opt: SearchOptions = {},
+    ) {
         const requestData: Record<string, unknown> = {
-            url: toSEUrl(searchEngine, query),
-            zone,
-            format: responseFormat,
             method: 'GET',
-            country: country.toLowerCase(),
-            data_format: dataFormat,
+            zone: zone,
+            url: toSEUrl(opt.searchEngine, query),
+            format: opt.responseFormat || 'raw',
+            country: opt.country?.toLowerCase(),
+            data_format: opt.dataFormat || 'markdown',
         };
 
-        Object.keys(requestData).forEach((key) => {
-            if (!requestData[key]) {
-                delete requestData[key];
-            }
-        });
-
+        dropEmptyKeys(requestData);
         logRequest('POST', REQUEST_API_URL, requestData);
 
         try {
@@ -96,7 +86,7 @@ export class SearchAPI {
                 method: 'POST',
                 body: JSON.stringify(requestData),
                 headers: this.authHeaders,
-                dispatcher: getDispatcher({ timeout }),
+                dispatcher: getDispatcher({ timeout: opt.timeout }),
             });
 
             const response_data = await response.body.text();
@@ -115,7 +105,8 @@ export class SearchAPI {
                 );
             }
 
-            if (responseFormat == 'json') return safeJsonParse(response_data);
+            if (opt.responseFormat == 'json')
+                return safeJsonParse(response_data);
             return response_data;
         } catch (e: any) {
             if (
@@ -129,38 +120,32 @@ export class SearchAPI {
         }
     }
 
-    private async searchBatch(queries: string[], opt: SearchOptions = {}) {
+    private async searchBatch(
+        queries: string[],
+        zone: string,
+        opt: SearchOptions = {},
+    ) {
         logger.info(`Processing ${queries.length} queries in parallel`);
 
-        const {
-            zone = this.zone,
-            searchEngine = 'google',
-            responseFormat = 'json',
-            country = '',
-            dataFormat = 'markdown',
-            timeout = null,
-        } = opt;
-
         const requests = queries.map((query) => {
-            const requestBody: Record<string, unknown> = {
+            const requestData: Record<string, unknown> = {
                 zone,
-                url: toSEUrl(searchEngine, query),
-                format: responseFormat,
+                url: toSEUrl(opt.searchEngine, query),
+                format: opt.responseFormat,
                 method: 'GET',
-                data_format: dataFormat,
+                data_format: opt.dataFormat || 'markdown',
+                country: opt.country?.toLowerCase(),
             };
 
-            if (country) {
-                requestBody.country = country.toLowerCase();
-            }
+            dropEmptyKeys(requestData);
 
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), timeout);
+            const timeoutId = setTimeout(() => controller.abort(), opt.timeout);
 
             return request(REQUEST_API_URL, {
                 method: 'POST',
                 headers: this.authHeaders,
-                body: JSON.stringify(requestBody),
+                body: JSON.stringify(requestData),
                 signal: controller.signal,
                 dispatcher: getDispatcher(),
             })
@@ -192,7 +177,7 @@ export class SearchAPI {
                     }
 
                     let data;
-                    if (responseFormat === 'json') {
+                    if (opt.responseFormat === 'json') {
                         data = await response.body.json();
                     } else {
                         data = await response.body.text();

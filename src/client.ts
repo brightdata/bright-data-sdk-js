@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import './config';
+import { z } from 'zod';
 import { WebScraper } from './api/scrape';
 import { SearchAPI } from './api/search';
 import { ZoneManager } from './utils/zone-manager';
@@ -10,7 +11,7 @@ import {
     DEFAULT_SERP_ZONE,
 } from './utils/constants';
 import { ValidationError } from './exceptions/errors';
-import { isTrueLike } from './utils/misc';
+import { isTrueLike, maskKey } from './utils/misc';
 import {
     ClientOptionsSchema,
     ApiKeySchema,
@@ -18,6 +19,7 @@ import {
     SearchOptionsSchema,
     SearchQueryParamSchema,
     URLParamSchema,
+    assertSchema,
 } from './schemas';
 import type {
     ZoneInfo,
@@ -28,57 +30,57 @@ import type {
 
 const logger = getLogger('client');
 
+/**
+ * Create a new bdclient instance
+ *
+ * @param opt Configuration options for the client
+ *
+ * @example
+ * ```javascript
+ * // Basic usage
+ * const client = new bdclient({
+ *     api_token: 'your-api-token'
+ * });
+ *
+ * // Advanced configuration
+ * const client = new bdclient({
+ *     api_token: 'brd-customer-hl_12345-zone-web:abc123',
+ *     auto_create_zones: true,
+ *     web_unlocker_zone: 'my_web_zone',
+ *     serp_zone: 'my_serp_zone',
+ *     log_level: 'DEBUG',
+ *     verbose: true
+ * });
+ *
+ * // Using environment variables
+ * process.env.BRIGHTDATA_API_TOKEN = 'your-token';
+ * const client = new bdclient(); // Automatically uses env var
+ * ```
+ */
 export class bdclient {
-    private apiKey!: string;
     private webScraper: WebScraper;
     private searchApi: SearchAPI;
     private zoneManager: ZoneManager;
-    /**
-     * Create a new bdclient instance
-     *
-     * @param opt Configuration options for the client
-     *
-     * @example
-     * ```javascript
-     * // Basic usage
-     * const client = new bdclient({
-     *     api_token: 'your-api-token'
-     * });
-     *
-     * // Advanced configuration
-     * const client = new bdclient({
-     *     api_token: 'brd-customer-hl_12345-zone-web:abc123',
-     *     auto_create_zones: true,
-     *     web_unlocker_zone: 'my_web_zone',
-     *     serp_zone: 'my_serp_zone',
-     *     log_level: 'DEBUG',
-     *     verbose: true
-     * });
-     *
-     * // Using environment variables
-     * process.env.BRIGHTDATA_API_TOKEN = 'your-token';
-     * const client = new bdclient(); // Automatically uses env var
-     * ```
-     */
+
     constructor(options: BdClientOptions) {
-        const opt = ClientOptionsSchema.parse(options || {});
+        const opt = assertSchema(ClientOptionsSchema, options || {});
         const isVerbose = opt.verbose
             ? opt.verbose
             : isTrueLike(process.env.BRIGHTDATA_VERBOSE || '');
         setupLogging(opt.logLevel, opt.structuredLogging, isVerbose);
         logger.info('Initializing Bright Data SDK client');
-        this.apiKey = ApiKeySchema.parse(
+
+        const apiKey = assertSchema(
+            ApiKeySchema,
             opt.apiKey || process.env.BRIGHTDATA_API_KEY,
         );
-        const keyPreview =
-            this.apiKey.length > 8
-                ? `${this.apiKey.slice(0, 4)}***${this.apiKey.slice(-4)}`
-                : '***';
-        logger.info(`API key validated successfully: ${keyPreview}`);
+
+        logger.info(`API key validated successfully: ${maskKey(apiKey)}`);
         logger.info('HTTP client configured with secure headers');
-        this.zoneManager = new ZoneManager({ apiKey: this.apiKey });
+
+        this.zoneManager = new ZoneManager({ apiKey });
         this.webScraper = new WebScraper({
-            apiKey: this.apiKey,
+            apiKey,
             zoneManager: this.zoneManager,
             autoCreateZones: opt.autoCreateZones,
             zone:
@@ -87,7 +89,7 @@ export class bdclient {
                 DEFAULT_WEB_UNLOCKER_ZONE,
         });
         this.searchApi = new SearchAPI({
-            apiKey: this.apiKey,
+            apiKey,
             zoneManager: this.zoneManager,
             autoCreateZones: opt.autoCreateZones,
             zone: opt.serpZone || process.env.SERP_ZONE || DEFAULT_SERP_ZONE,
@@ -130,12 +132,14 @@ export class bdclient {
      * ```
      */
     async scrape(url: string | string[], options: ScrapeOptions = {}) {
-        const safeUrl = URLParamSchema.parse(url);
-        const safeOptions = ScrapeOptionsSchema.parse(options);
+        const safeUrl = assertSchema(URLParamSchema, url);
+        const safeOptions = assertSchema(ScrapeOptionsSchema, options);
+
         logger.info(
             'Starting scrape operation for ' +
                 `${Array.isArray(url) ? url.length : 1} URL(s)`,
         );
+
         return this.webScraper.scrape(safeUrl, safeOptions);
     }
     /**
@@ -185,12 +189,14 @@ export class bdclient {
      * ```
      */
     async search(query: string | string[], options: SearchOptions = {}) {
-        const safeQuery = SearchQueryParamSchema.parse(query);
-        const safeOptions = SearchOptionsSchema.parse(options);
+        const safeQuery = assertSchema(SearchQueryParamSchema, query);
+        const safeOptions = assertSchema(SearchOptionsSchema, options);
+
         logger.info(
             'Starting search operation for ' +
                 `${Array.isArray(safeQuery) ? safeQuery.length : 1} safeQuery/queries`,
         );
+
         return this.searchApi.search(safeQuery, safeOptions);
     }
     /**
