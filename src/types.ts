@@ -28,7 +28,7 @@ export interface FetchingOptions {
     timeout?: number;
 }
 
-type BaseScrapeOptions = {
+type BaseRequestOptions = {
     /**
      * Response format (default: "raw")
      * Available values:
@@ -38,9 +38,9 @@ type BaseScrapeOptions = {
     responseFormat?: 'json' | 'raw';
     /**
      * HTTP method for the request (default: "GET")
-     * Available values: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
+     * Available values: 'GET' | 'POST'
      */
-    method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+    method?: 'GET' | 'POST';
     /**
      * Two-letter ISO country code for proxy location (default: "")
      * @example 'us' | 'gb' | 'de' | 'jp' | 'au' | 'ca' | 'fr' | 'it' | 'es' | ''
@@ -59,7 +59,7 @@ export type ScrapeOptions = {
      * @example 'web_unlocker_1' | 'my_scraping_zone'
      */
     zone?: string;
-} & BaseScrapeOptions;
+} & BaseRequestOptions;
 
 export type SearchEngine = 'google' | 'bing' | 'yandex';
 
@@ -77,7 +77,7 @@ export type SearchOptions = {
      * @example 'serp_api_1' | 'my_search_zone'
      */
     zone?: string;
-} & BaseScrapeOptions;
+} & BaseRequestOptions;
 
 export interface BdClientOptions {
     /**

@@ -152,8 +152,8 @@ Create a `.env` file in your project root:
 
 ```env
 BRIGHTDATA_API_KEY=your_bright_data_api_key
-WEB_UNLOCKER_ZONE=your_web_unlocker_zone  # Optional
-SERP_ZONE=your_serp_zone                  # Optional
+BRIGHTDATA_WEB_UNLOCKER_ZONE=your_web_unlocker_zone  # Optional
+BRIGHTDATA_SERP_ZONE=your_serp_zone                  # Optional
 ```
 
 ### Manage Zones

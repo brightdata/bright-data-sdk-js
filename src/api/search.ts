@@ -15,6 +15,15 @@ import type { ZoneManager } from '../utils/zone-manager';
 
 const logger = getLogger('api.search');
 
+interface SERPQueryBody {
+    method: 'GET';
+    url: string;
+    zone: SearchOptions['zone'];
+    format: SearchOptions['responseFormat'];
+    country?: SearchOptions['country'];
+    data_format?: SearchOptions['dataFormat'];
+}
+
 const toSEUrl = (searchEngine: SearchEngine = 'google', query: string) => {
     const encodedQuery = encodeURIComponent(query.trim());
 
@@ -69,12 +78,12 @@ export class SearchAPI {
         zone: string,
         opt: SearchOptions = {},
     ) {
-        const requestData: Record<string, unknown> = {
+        const requestData: SERPQueryBody = {
             method: 'GET',
             zone: zone,
             url: toSEUrl(opt.searchEngine, query),
+            country: opt.country,
             format: opt.responseFormat || 'raw',
-            country: opt.country?.toLowerCase(),
             data_format: opt.dataFormat || 'markdown',
         };
 
@@ -128,13 +137,13 @@ export class SearchAPI {
         logger.info(`Processing ${queries.length} queries in parallel`);
 
         const requests = queries.map((query) => {
-            const requestData: Record<string, unknown> = {
+            const requestData: SERPQueryBody = {
+                method: 'GET',
                 zone,
                 url: toSEUrl(opt.searchEngine, query),
-                format: opt.responseFormat,
-                method: 'GET',
+                country: opt.country,
+                format: opt.responseFormat || 'raw',
                 data_format: opt.dataFormat || 'markdown',
-                country: opt.country?.toLowerCase(),
             };
 
             dropEmptyKeys(requestData);

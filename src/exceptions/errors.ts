@@ -34,13 +34,13 @@ export class NetworkError extends BrightDataError {
 }
 
 export class APIError extends BrightDataError {
-    status_code: number | null;
-    response_text: string | null;
+    statusCode: number | null;
+    responseText: string | null;
 
-    constructor(message: string, status_code = null, response_text = null) {
+    constructor(message: string, statusCode = null, responseText = null) {
         super(message);
         this.name = 'APIError';
-        this.status_code = status_code;
-        this.response_text = response_text;
+        this.statusCode = statusCode;
+        this.responseText = responseText;
     }
 }

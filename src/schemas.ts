@@ -5,6 +5,8 @@ export const ApiKeySchema = z
     .string()
     .min(10, 'API key appears to be invalid (too short)');
 
+export const VerboseSchema = z.stringbool().optional();
+
 const SearchQuerySchema = z
     .string('Invalid URL format')
     .min(1, 'URL cannot be empty')
@@ -67,8 +69,12 @@ const ScrapeOptionsBaseSchema = z.object({
             2,
             'Country code must be exactly 2 characters (ISO 3166-1 alpha-2) or empty',
         )
+        .transform((v) => v.toLowerCase())
         .optional(),
-    method: z.enum(['GET', 'POST', 'PUT', 'DELETE', 'PATCH']).optional(),
+    method: z
+        .enum(['GET', 'POST', 'get', 'post'])
+        .transform((v) => v.toUpperCase() as 'GET' | 'POST')
+        .optional(),
     responseFormat: z.enum(['json', 'raw']).optional(),
     dataFormat: z.enum(['markdown', 'screenshot']).optional(),
 });

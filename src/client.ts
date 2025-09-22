@@ -9,7 +9,7 @@ import {
     DEFAULT_SERP_ZONE,
 } from './utils/constants';
 import { ValidationError } from './exceptions/errors';
-import { isTrueLike, maskKey } from './utils/misc';
+import { maskKey } from './utils/misc';
 import {
     ClientOptionsSchema,
     ApiKeySchema,
@@ -17,6 +17,7 @@ import {
     SearchOptionsSchema,
     SearchQueryParamSchema,
     URLParamSchema,
+    VerboseSchema,
     assertSchema,
 } from './schemas';
 import type {
@@ -51,7 +52,7 @@ const logger = getLogger('client');
  * });
  *
  * // Using environment variables
- * process.env.BRIGHTDATA_API_TOKEN = 'your-token';
+ * process.env.BRIGHTDATA_API_KEY = 'your-key';
  * const client = new bdclient(); // Automatically uses env var
  * ```
  */
@@ -62,15 +63,23 @@ export class bdclient {
 
     constructor(options: BdClientOptions) {
         const opt = assertSchema(ClientOptionsSchema, options || {});
+        const {
+            BRIGHTDATA_API_KEY,
+            BRIGHTDATA_VERBOSE,
+            BRIGHTDATA_WEB_UNLOCKER_ZONE,
+            BRIGHTDATA_SERP_ZONE,
+        } = process.env;
+
         const isVerbose = opt.verbose
             ? opt.verbose
-            : isTrueLike(process.env.BRIGHTDATA_VERBOSE || '');
+            : assertSchema(VerboseSchema, BRIGHTDATA_VERBOSE || '0');
+
         setupLogging(opt.logLevel, opt.structuredLogging, isVerbose);
         logger.info('Initializing Bright Data SDK client');
 
         const apiKey = assertSchema(
             ApiKeySchema,
-            opt.apiKey || process.env.BRIGHTDATA_API_KEY,
+            opt.apiKey || BRIGHTDATA_API_KEY,
         );
 
         logger.info(`API key validated successfully: ${maskKey(apiKey)}`);
@@ -83,14 +92,14 @@ export class bdclient {
             autoCreateZones: opt.autoCreateZones,
             zone:
                 opt.webUnlockerZone ||
-                process.env.WEB_UNLOCKER_ZONE ||
+                BRIGHTDATA_WEB_UNLOCKER_ZONE ||
                 DEFAULT_WEB_UNLOCKER_ZONE,
         });
         this.searchApi = new SearchAPI({
             apiKey,
             zoneManager: this.zoneManager,
             autoCreateZones: opt.autoCreateZones,
-            zone: opt.serpZone || process.env.SERP_ZONE || DEFAULT_SERP_ZONE,
+            zone: opt.serpZone || BRIGHTDATA_SERP_ZONE || DEFAULT_SERP_ZONE,
         });
     }
     /**

@@ -18,10 +18,7 @@ export function safeJsonParse(data: unknown) {
     }
 }
 
-export const isTrueLike = (val: unknown) =>
-    ['true', '1', 'yes', 'on'].includes(String(val).toLowerCase());
-
-export const dropEmptyKeys = (obj: Record<string, unknown>) => {
+export const dropEmptyKeys = (obj: Object) => {
     for (const key in obj) {
         if (obj[key] === undefined || obj[key] === null || obj[key] === '') {
             delete obj[key];

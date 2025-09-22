@@ -15,6 +15,15 @@ import type { ZoneManager } from '../utils/zone-manager';
 
 const logger = getLogger('api.scraper');
 
+interface ScrapeQueryBody {
+    url: string;
+    zone: ScrapeOptions['zone'];
+    format: ScrapeOptions['responseFormat'];
+    method?: ScrapeOptions['method'];
+    country?: ScrapeOptions['country'];
+    data_format?: ScrapeOptions['dataFormat'];
+}
+
 interface WebScraperOptions {
     apiKey: string;
     zoneManager: ZoneManager;
@@ -32,7 +41,6 @@ export class WebScraper {
         this.authHeaders = getAuthHeaders(opts.apiKey);
         this.zoneManager = opts.zoneManager;
     }
-
     async scrape(url: string | string[], opt: ScrapeOptions = {}) {
         const zone = ZoneNameSchema.parse(opt.zone || this.zone);
 
@@ -47,18 +55,17 @@ export class WebScraper {
 
         return this.scrapeSingle(url, zone, opt);
     }
-
     private async scrapeSingle(
         url: string,
         zone: string,
         opt: ScrapeOptions = {},
     ) {
-        const requestData: Record<string, unknown> = {
+        const requestData: ScrapeQueryBody = {
             url,
             zone,
+            method: opt.method,
+            country: opt.country,
             format: opt.responseFormat || 'raw',
-            method: opt.method?.toUpperCase(),
-            country: opt.country?.toLowerCase(),
             data_format: opt.dataFormat || 'markdown',
         };
 
@@ -116,13 +123,13 @@ export class WebScraper {
         logger.info(`Processing ${urls.length} URLs in parallel`);
 
         const requests = urls.map((url) => {
-            const requestData: Record<string, unknown> = {
+            const requestData: ScrapeQueryBody = {
                 url,
                 zone,
+                method: opt.method,
+                country: opt.country,
                 format: opt.responseFormat || 'raw',
-                method: opt.method?.toUpperCase(),
                 data_format: opt.dataFormat || 'markdown',
-                country: opt.country?.toLowerCase(),
             };
 
             dropEmptyKeys(requestData);
