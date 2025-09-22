@@ -1,7 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import './config';
-import { z } from 'zod';
 import { WebScraper } from './api/scrape';
 import { SearchAPI } from './api/search';
 import { ZoneManager } from './utils/zone-manager';
@@ -125,7 +123,7 @@ export class bdclient {
      * });
      *
      * // E-commerce scraping
-     * const productData =  client.scrape('https://amazon.com/dp/B123', {
+     * const productData =  await client.scrape('https://amazon.com/dp/B123', {
      *     responseFormat: 'json',
      *     country: 'us'
      * });
@@ -212,25 +210,25 @@ export class bdclient {
      * @example
      * ```javascript
      * // Save scraped data as JSON
-     * const data =  client.scrape('https://example.com');
-     * const filePath =  client.download_content(data, 'scraped_data.json', 'json');
+     * const data =  await client.scrape('https://example.com');
+     * const filePath =  await client.downloadContent(data, 'scraped_data.json', 'json');
      *
      * // Auto-generate filename
-     * const filePath =  client.download_content(data, null, 'json');
+     * const filePath =  await client.downloadContent(data, null, 'json');
      * // Creates: brightdata_content_2024-01-15T10-30-45-123Z.json
      *
      * // Save as CSV (for array of objects)
-     * const products =  client.scrape(productUrls, { response_format: 'json' });
-     * const csvPath =  client.download_content(products, 'products.csv', 'csv');
+     * const products =  await client.scrape(productUrls, { response_format: 'json' });
+     * const csvPath =  await client.downloadContent(products, 'products.csv', 'csv');
      *
      * // Save as plain text
-     * const html =  client.scrape('https://example.com');
-     * const txtPath =  client.download_content(html, 'page.txt', 'txt');
+     * const html =  await client.scrape('https://example.com');
+     * const txtPath =  await client.downloadContent(html, 'page.txt', 'txt');
      *
      * // Different formats
-     *  client.download_content(data, 'data.json', 'json');  // JSON format
-     *  client.download_content(data, 'data.csv', 'csv');    // CSV format
-     *  client.download_content(data, 'data.txt', 'txt');    // Text format
+     *  await client.downloadContent(data, 'data.json', 'json');  // JSON format
+     *  await client.downloadContent(data, 'data.csv', 'csv');    // CSV format
+     *  await client.downloadContent(data, 'data.txt', 'txt');    // Text format
      * ```
      */
     downloadContent(
@@ -396,17 +394,17 @@ export class bdclient {
      * @example
      * ```javascript
      * // List all zones
-     * const zones =  client.listZones();
+     * const zones =  await client.listZones();
      *
      * // Process zone information
-     * zones.forEach(zone => {
+     * for (let zone of zones) {
      *     console.log(`Zone: ${zone.name}`);
      *     console.log(`Type: ${zone.type}`);
      *     console.log(`Status: ${zone.status}`);
      *     console.log(`IPs: ${zone.ips}`);
      *     console.log(`Bandwidth: ${zone.bandwidth}`);
      *     console.log('---');
-     * });
+     * };
      *
      * // Find specific zone
      * const webZone = zones.find(z => z.name === 'web_unlocker_1');
