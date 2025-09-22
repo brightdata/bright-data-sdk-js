@@ -15,11 +15,11 @@ export type ZoneInfoResponse = ZoneInfo & {
 
 export interface FetchingOptions {
     /**
-     * Maximum parallel workers for multiple URLs (default: 10)
-     * Range: 1-50 workers
+     * Maximum parallel queries for multiple URLs (default: 10)
+     * Range: 1-50 queries
      * @example 1 | 5 | 10 | 20 | 50
      */
-    maxWorkers?: number;
+    concurrency?: number;
     /**
      * Request timeout in milliseconds (default: 30000)
      * Range: 1000-300000 ms (1 second to 5 minutes)
@@ -35,7 +35,7 @@ type BaseRequestOptions = {
      * - "raw": Returns HTML string
      * - "json": Returns structured data object
      */
-    responseFormat?: 'json' | 'raw';
+    format?: 'json' | 'raw';
     /**
      * HTTP method for the request (default: "GET")
      * Available values: 'GET' | 'POST'
@@ -115,4 +115,10 @@ export interface BdClientOptions {
      * @example true | false
      */
     verbose?: boolean;
+}
+
+export interface JSONResponse {
+    status_code: number;
+    headers: Record<string, string>;
+    body: string;
 }

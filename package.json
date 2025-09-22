@@ -2,8 +2,8 @@
     "name": "@brightdata/sdk",
     "version": "1.1.0",
     "description": "JavaScript SDK for Bright Data Web Scraping and SERP APIs",
-    "main": "src/index.js",
-    "types": "src/index.d.ts",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
     "scripts": {
         "test": "vitest",
         "lint": "eslint src/**/*.ts",
@@ -34,6 +34,7 @@
         "node": ">=20.0.0"
     },
     "dependencies": {
+        "@supercharge/promise-pool": "^3.2.0",
         "undici": "^7.16.0",
         "zod": "^4.1.9"
     },

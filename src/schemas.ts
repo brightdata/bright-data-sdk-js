@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { ValidationError } from './exceptions/errors';
+import { ValidationError } from './utils/errors';
+import { DEFAULT_CONCURRENCY } from './utils/constants';
 
 export const ApiKeySchema = z
     .string()
@@ -56,8 +57,8 @@ export const ClientOptionsSchema = z
             .enum(['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])
             .optional(),
         verbose: z.boolean().optional(),
-        structuredLogging: z.boolean().default(true).optional(),
-        autoCreateZones: z.boolean().default(true).optional(),
+        structuredLogging: z.boolean().default(true),
+        autoCreateZones: z.boolean().default(true),
     })
     .optional();
 
@@ -75,12 +76,12 @@ const ScrapeOptionsBaseSchema = z.object({
         .enum(['GET', 'POST', 'get', 'post'])
         .transform((v) => v.toUpperCase() as 'GET' | 'POST')
         .optional(),
-    responseFormat: z.enum(['json', 'raw']).optional(),
+    format: z.enum(['json', 'raw']).optional(),
     dataFormat: z.enum(['markdown', 'screenshot']).optional(),
 });
 
 const FetchingOptionsSchema = z.object({
-    maxWorkers: z.number().min(1).max(50).optional(),
+    concurrency: z.int().min(1).max(50).default(DEFAULT_CONCURRENCY),
     timeout: z.number().min(250).max(300_000).optional(),
 });
 

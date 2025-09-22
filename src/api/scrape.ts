@@ -1,16 +1,17 @@
-import { REQUEST_API_URL } from '../utils/constants';
-import { safeJsonParse } from '../utils/misc';
+import { PromisePool } from '@supercharge/promise-pool';
+import { REQUEST_API_URL, DEFAULT_CONCURRENCY } from '../utils/constants';
 import { getLogger, logRequest } from '../utils/logging-config';
 import {
     ValidationError,
     APIError,
     AuthenticationError,
-} from '../exceptions/errors';
-import { request, getDispatcher, isResponseOk } from '../utils/net';
+    BRDError,
+} from '../utils/errors';
+import { request, getDispatcher } from '../utils/net';
 import { getAuthHeaders } from '../utils/auth';
-import { dropEmptyKeys } from '../utils/misc';
+import { dropEmptyKeys, safeJsonParse } from '../utils/misc';
 import { ZoneNameSchema } from '../schemas';
-import type { ScrapeOptions } from '../types';
+import type { ScrapeOptions, JSONResponse } from '../types';
 import type { ZoneManager } from '../utils/zone-manager';
 
 const logger = getLogger('api.scraper');
@@ -18,7 +19,7 @@ const logger = getLogger('api.scraper');
 interface ScrapeQueryBody {
     url: string;
     zone: ScrapeOptions['zone'];
-    format: ScrapeOptions['responseFormat'];
+    format: ScrapeOptions['format'];
     method?: ScrapeOptions['method'];
     country?: ScrapeOptions['country'];
     data_format?: ScrapeOptions['dataFormat'];
@@ -65,7 +66,7 @@ export class WebScraper {
             zone,
             method: opt.method,
             country: opt.country,
-            format: opt.responseFormat || 'raw',
+            format: opt.format || 'raw',
             data_format: opt.dataFormat || 'markdown',
         };
 
@@ -80,7 +81,7 @@ export class WebScraper {
                 dispatcher: getDispatcher({ timeout: opt.timeout }),
             });
 
-            const response_data = await response.body.text();
+            const responseTxt = await response.body.text();
 
             if (response.statusCode >= 400) {
                 if (response.statusCode === 401) {
@@ -89,28 +90,22 @@ export class WebScraper {
                     );
                 }
                 if (response.statusCode === 400) {
-                    throw new ValidationError(`Bad request: ${response_data}`);
+                    throw new ValidationError(`Bad request: ${responseTxt}`);
                 }
                 throw new APIError(
                     `Scraping failed: HTTP ${response.statusCode}`,
                     response.statusCode,
-                    response_data,
+                    responseTxt,
                 );
             }
 
-            if (opt.responseFormat === 'json') {
-                return safeJsonParse(response_data);
+            if (opt.format === 'json') {
+                return safeJsonParse(responseTxt);
             }
 
-            return response_data;
+            return responseTxt;
         } catch (e: any) {
-            if (
-                e instanceof AuthenticationError ||
-                e instanceof ValidationError ||
-                e instanceof APIError
-            ) {
-                throw e;
-            }
+            if (e instanceof BRDError) throw e;
             throw new APIError(`Scraping failed: ${e.message}`);
         }
     }
@@ -120,61 +115,21 @@ export class WebScraper {
         zone: string,
         opt: ScrapeOptions = {},
     ) {
+        const limit = opt.concurrency || DEFAULT_CONCURRENCY;
         logger.info(`Processing ${urls.length} URLs in parallel`);
-
-        const requests = urls.map((url) => {
-            const requestData: ScrapeQueryBody = {
-                url,
-                zone,
-                method: opt.method,
-                country: opt.country,
-                format: opt.responseFormat || 'raw',
-                data_format: opt.dataFormat || 'markdown',
-            };
-
-            dropEmptyKeys(requestData);
-
-            return request(REQUEST_API_URL, {
-                method: 'POST',
-                headers: this.authHeaders,
-                body: JSON.stringify(requestData),
-                dispatcher: getDispatcher(),
-            });
-        });
+        logger.info(`Concurrency is ${limit}`);
 
         try {
-            const responses = await Promise.all(requests);
-
-            const results = [];
-            for (let i = 0; i < responses.length; i++) {
-                const response = responses[i];
-                const url = urls[i];
-
-                try {
-                    if (!isResponseOk(response)) {
-                        results.push({
-                            error: `HTTP ${response.statusCode}`,
-                            url: url,
-                        });
-                        continue;
+            const { results } = await PromisePool.for(urls)
+                .withConcurrency(limit)
+                .useCorrespondingResults()
+                .process(async (url) => {
+                    try {
+                        return await this.scrapeSingle(url, zone, opt);
+                    } catch (e) {
+                        return e;
                     }
-
-                    let data;
-                    if (opt.responseFormat === 'json') {
-                        data = await response.body.json();
-                    } else {
-                        data = await response.body.text();
-                    }
-
-                    results.push(data);
-                    logger.debug(`Completed scraping URL: ${url}`);
-                } catch (error: any) {
-                    logger.error(
-                        `Failed to process URL: ${url} - ${error.message}`,
-                    );
-                    results.push({ error: error.message, url: url });
-                }
-            }
+                });
 
             logger.info(
                 `Completed batch scraping operation: ${results.length} results`,
@@ -183,7 +138,7 @@ export class WebScraper {
             return results;
         } catch (error: any) {
             logger.error(`Batch scraping failed: ${error.message}`);
-            return urls.map((url) => ({ error: error.message, url: url }));
+            throw new APIError(`Batch scraping failed:`, error.message);
         }
     }
 }

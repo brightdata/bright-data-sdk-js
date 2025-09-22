@@ -8,7 +8,7 @@ import {
     DEFAULT_WEB_UNLOCKER_ZONE,
     DEFAULT_SERP_ZONE,
 } from './utils/constants';
-import { ValidationError } from './exceptions/errors';
+import { ValidationError } from './utils/errors';
 import { maskKey } from './utils/misc';
 import {
     ClientOptionsSchema,
@@ -118,14 +118,14 @@ export class bdclient {
      *
      * // Get structured JSON data
      * const data =  await client.scrape('https://example.com', {
-     *     responseFormat: 'json'
+     *     format: 'json'
      * });
      *
      * // Advanced options
      * const result =  await client.scrape('https://example.com', {
      *     method: 'GET',                 // 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
      *     country: 'us',                 // 'us' | 'gb' | 'de' | 'jp' etc.
-     *     responseFormat: 'raw',         // 'raw' | 'json'
+     *     format: 'raw',                 // 'raw' | 'json'
      *     dataFormat: 'markdown',        // 'markdown' | 'screenshot'
      *     timeout: 30000,                // 5000-300000 milliseconds
      *     zone: 'my_custom_zone'         // Custom zone name
@@ -133,7 +133,7 @@ export class bdclient {
      *
      * // E-commerce scraping
      * const productData =  await client.scrape('https://amazon.com/dp/B123', {
-     *     responseFormat: 'json',
+     *     format: 'json',
      *     country: 'us'
      * });
      * ```
@@ -165,14 +165,14 @@ export class bdclient {
      *
      * // Structured search results
      * const data =  await client.search('best laptops 2024', {
-     *     responseFormat: 'json'
+     *     format: 'json'
      * });
      *
      * // Advanced search options
      * const results =  await client.search('machine learning courses', {
      *     searchEngine: 'bing',         // 'google' | 'bing' | 'yandex'
      *     country: 'us',                 // 'us' | 'gb' | 'de' | 'jp' etc.
-     *     responseFormat: 'json',        // 'raw' | 'json'
+     *     format: 'json',        // 'raw' | 'json'
      *     dataFormat: 'markdown',        // 'markdown' | 'screenshot'
      *     timeout: 20000,                // 5000-300000 milliseconds
      *     zone: 'my_serp_zone'           // Custom zone

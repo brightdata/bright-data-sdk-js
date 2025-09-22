@@ -253,13 +253,12 @@ try {
 
 ## Configuration Constants
 
-| Constant               | Default | Description                     |
-| ---------------------- | ------- | ------------------------------- |
-| `DEFAULT_MAX_WORKERS`  | `10`    | Max parallel tasks              |
-| `DEFAULT_TIMEOUT`      | `30000` | Request timeout (milliseconds)  |
-| `CONNECTION_POOL_SIZE` | `20`    | Max concurrent HTTP connections |
-| `MAX_RETRIES`          | `3`     | Retry attempts on failure       |
-| `RETRY_BACKOFF_FACTOR` | `1.5`   | Exponential backoff multiplier  |
+| Constant               | Default | Description                    |
+| ---------------------- | ------- | ------------------------------ |
+| `DEFAULT_CONCURRENCY`  | `10`    | Max parallel tasks             |
+| `DEFAULT_TIMEOUT`      | `30000` | Request timeout (milliseconds) |
+| `MAX_RETRIES`          | `3`     | Retry attempts on failure      |
+| `RETRY_BACKOFF_FACTOR` | `1.5`   | Exponential backoff multiplier |
 
 ## TypeScript Support
 

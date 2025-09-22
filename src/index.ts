@@ -1,19 +1,19 @@
 import { bdclient } from './client';
 import {
-    BrightDataError,
+    BRDError,
     ValidationError,
     AuthenticationError,
     ZoneError,
     NetworkError,
     APIError,
-} from './exceptions/errors';
+} from './utils/errors';
+import { PACKAGE_VERSION } from './utils/constants';
 
-const VERSION = '1.1.0'; // TODO: This should match the version in package.json
+const VERSION = PACKAGE_VERSION;
 
-export default bdclient;
 export {
     bdclient,
-    BrightDataError,
+    BRDError,
     ValidationError,
     AuthenticationError,
     ZoneError,

@@ -1,39 +1,39 @@
-export class BrightDataError extends Error {
+export class BRDError extends Error {
     constructor(message: string) {
         super(message);
-        this.name = 'BrightDataError';
+        this.name = 'BRDError';
     }
 }
 
-export class ValidationError extends BrightDataError {
+export class ValidationError extends BRDError {
     constructor(message: string) {
         super(message);
         this.name = 'ValidationError';
     }
 }
 
-export class AuthenticationError extends BrightDataError {
+export class AuthenticationError extends BRDError {
     constructor(message: string) {
         super(message);
         this.name = 'AuthenticationError';
     }
 }
 
-export class ZoneError extends BrightDataError {
+export class ZoneError extends BRDError {
     constructor(message: string) {
         super(message);
         this.name = 'ZoneError';
     }
 }
 
-export class NetworkError extends BrightDataError {
+export class NetworkError extends BRDError {
     constructor(message: string) {
         super(message);
         this.name = 'NetworkError';
     }
 }
 
-export class APIError extends BrightDataError {
+export class APIError extends BRDError {
     statusCode: number | null;
     responseText: string | null;
 

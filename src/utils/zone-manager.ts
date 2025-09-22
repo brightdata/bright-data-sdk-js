@@ -2,7 +2,7 @@ import { request } from 'undici';
 import { getLogger } from './logging-config';
 import { ZONE_API_URL } from './constants';
 import { getAuthHeaders } from './auth';
-import { ZoneError, AuthenticationError, APIError } from '../exceptions/errors';
+import { ZoneError, AuthenticationError, APIError } from './errors';
 import type { ZoneInfo, ZoneInfoResponse } from '../types';
 
 const logger = getLogger('utils.zone-manager');

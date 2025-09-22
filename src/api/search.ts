@@ -1,16 +1,17 @@
-import { REQUEST_API_URL } from '../utils/constants';
-import { safeJsonParse } from '../utils/misc';
+import { PromisePool } from '@supercharge/promise-pool';
+import { REQUEST_API_URL, DEFAULT_CONCURRENCY } from '../utils/constants';
 import { getLogger, logRequest } from '../utils/logging-config';
 import {
-    ValidationError,
     APIError,
+    ValidationError,
     AuthenticationError,
-} from '../exceptions/errors';
-import { request, getDispatcher, isResponseOk } from '../utils/net';
-import { dropEmptyKeys } from '../utils/misc';
+    BRDError,
+} from '../utils/errors';
+import { request, getDispatcher } from '../utils/net';
 import { getAuthHeaders } from '../utils/auth';
+import { dropEmptyKeys, safeJsonParse } from '../utils/misc';
 import { ZoneNameSchema } from '../schemas';
-import type { SearchOptions, SearchEngine } from '../types';
+import type { SearchOptions, SearchEngine, JSONResponse } from '../types';
 import type { ZoneManager } from '../utils/zone-manager';
 
 const logger = getLogger('api.search');
@@ -19,7 +20,7 @@ interface SERPQueryBody {
     method: 'GET';
     url: string;
     zone: SearchOptions['zone'];
-    format: SearchOptions['responseFormat'];
+    format: SearchOptions['format'];
     country?: SearchOptions['country'];
     data_format?: SearchOptions['dataFormat'];
 }
@@ -83,7 +84,7 @@ export class SearchAPI {
             zone: zone,
             url: toSEUrl(opt.searchEngine, query),
             country: opt.country,
-            format: opt.responseFormat || 'raw',
+            format: opt.format || 'raw',
             data_format: opt.dataFormat || 'markdown',
         };
 
@@ -98,33 +99,29 @@ export class SearchAPI {
                 dispatcher: getDispatcher({ timeout: opt.timeout }),
             });
 
-            const response_data = await response.body.text();
+            const responseTxt = await response.body.text();
 
             if (response.statusCode >= 400) {
-                if (response.statusCode == 401)
+                if (response.statusCode === 401)
                     throw new AuthenticationError(
                         'Invalid API key or insufficient permissions',
                     );
-                if (response.statusCode == 400)
-                    throw new ValidationError(`Bad request: ${response_data}`);
+                if (response.statusCode === 400)
+                    throw new ValidationError(`Bad request: ${responseTxt}`);
                 throw new APIError(
                     `Search failed: HTTP ${response.statusCode}`,
                     response.statusCode,
-                    response_data,
+                    responseTxt,
                 );
             }
 
-            if (opt.responseFormat == 'json')
-                return safeJsonParse(response_data);
-            return response_data;
-        } catch (e: any) {
-            if (
-                e instanceof AuthenticationError ||
-                e instanceof ValidationError ||
-                e instanceof APIError
-            ) {
-                throw e;
+            if (opt.format == 'json') {
+                return safeJsonParse(responseTxt);
             }
+
+            return responseTxt;
+        } catch (e: any) {
+            if (e instanceof BRDError) throw e;
             throw new APIError(`Search failed: ${e.message}`);
         }
     }
@@ -134,84 +131,30 @@ export class SearchAPI {
         zone: string,
         opt: SearchOptions = {},
     ) {
+        const limit = opt.concurrency || DEFAULT_CONCURRENCY;
         logger.info(`Processing ${queries.length} queries in parallel`);
-
-        const requests = queries.map((query) => {
-            const requestData: SERPQueryBody = {
-                method: 'GET',
-                zone,
-                url: toSEUrl(opt.searchEngine, query),
-                country: opt.country,
-                format: opt.responseFormat || 'raw',
-                data_format: opt.dataFormat || 'markdown',
-            };
-
-            dropEmptyKeys(requestData);
-
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), opt.timeout);
-
-            return request(REQUEST_API_URL, {
-                method: 'POST',
-                headers: this.authHeaders,
-                body: JSON.stringify(requestData),
-                signal: controller.signal,
-                dispatcher: getDispatcher(),
-            })
-                .then((response) => {
-                    clearTimeout(timeoutId);
-                    return response;
-                })
-                .catch((error) => {
-                    clearTimeout(timeoutId);
-                    throw error;
-                });
-        });
+        logger.info(`Concurrency is ${limit}`);
 
         try {
-            const responses = await Promise.all(requests);
-
-            const results = [];
-            for (let i = 0; i < responses.length; i++) {
-                const response = responses[i];
-                const query = queries[i];
-
-                try {
-                    if (!isResponseOk(response)) {
-                        results.push({
-                            error: `HTTP ${response.statusCode}`,
-                            query: query,
-                        });
-                        continue;
+            const { results } = await PromisePool.for(queries)
+                .withConcurrency(limit)
+                .useCorrespondingResults()
+                .process(async (q) => {
+                    try {
+                        return await this.searchSingle(q, zone, opt);
+                    } catch (e) {
+                        return e;
                     }
-
-                    let data;
-                    if (opt.responseFormat === 'json') {
-                        data = await response.body.json();
-                    } else {
-                        data = await response.body.text();
-                    }
-
-                    results.push(data);
-                    logger.debug(`Completed search query: ${query}`);
-                } catch (error) {
-                    logger.error(
-                        `Failed to process query: ${query} - ${error.message}`,
-                    );
-                    results.push({ error: error.message, query: query });
-                }
-            }
+                });
 
             logger.info(
                 `Completed batch search operation: ${results.length} results`,
             );
+
             return results;
         } catch (error: any) {
             logger.error(`Batch search failed: ${error.message}`);
-            return queries.map((query) => ({
-                error: error.message,
-                query: query,
-            }));
+            throw new APIError(`Batch search failed:`, error.message);
         }
     }
 }
