@@ -10,6 +10,7 @@ import {
     RETRY_BACKOFF_FACTOR,
     RETRY_STATUSES,
 } from './constants';
+import { APIError, AuthenticationError, ValidationError } from './errors';
 
 const { dns, retry } = interceptors;
 
@@ -34,5 +35,24 @@ export const getDispatcher = (params: GetDispatcherOptions = {}) => {
 export const request: typeof lib_request = async (url, opts) =>
     lib_request(url, opts);
 
-export const isResponseOk = (response: Dispatcher.ResponseData): boolean =>
-    response.statusCode >= 200 && response.statusCode < 300;
+export const assertResponse = async (response: Dispatcher.ResponseData) => {
+    const responseTxt = await response.body.text();
+
+    if (response.statusCode < 400) return responseTxt;
+
+    if (response.statusCode === 401) {
+        throw new AuthenticationError(
+            'Invalid API key or insufficient permissions',
+        );
+    }
+
+    if (response.statusCode === 400) {
+        throw new ValidationError(`Bad request: ${responseTxt}`);
+    }
+
+    throw new APIError(
+        `Scraping failed: HTTP ${response.statusCode}`,
+        response.statusCode,
+        responseTxt,
+    );
+};

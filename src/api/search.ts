@@ -1,15 +1,10 @@
 import { PromisePool } from '@supercharge/promise-pool';
 import { REQUEST_API_URL, DEFAULT_CONCURRENCY } from '../utils/constants';
 import { getLogger, logRequest } from '../utils/logging-config';
-import {
-    APIError,
-    ValidationError,
-    AuthenticationError,
-    BRDError,
-} from '../utils/errors';
-import { request, getDispatcher } from '../utils/net';
+import { APIError, BRDError } from '../utils/errors';
+import { request, getDispatcher, assertResponse } from '../utils/net';
 import { getAuthHeaders } from '../utils/auth';
-import { dropEmptyKeys, safeJsonParse } from '../utils/misc';
+import { dropEmptyKeys, parseJSON } from '../utils/misc';
 import { ZoneNameSchema } from '../schemas';
 import type { SearchOptions, SearchEngine, JSONResponse } from '../types';
 import type { ZoneManager } from '../utils/zone-manager';
@@ -22,7 +17,7 @@ interface SERPQueryBody {
     zone: SearchOptions['zone'];
     format: SearchOptions['format'];
     country?: SearchOptions['country'];
-    data_format?: SearchOptions['dataFormat'];
+    data_format?: 'markdown' | 'screenshot';
 }
 
 const toSEUrl = (searchEngine: SearchEngine = 'google', query: string) => {
@@ -68,9 +63,6 @@ export class SearchAPI {
             return this.searchBatch(query, zone, opt);
         }
 
-        if (typeof query !== 'string' || query.trim() == '')
-            throw new ValidationError('Query must be a non-empty string');
-
         logger.info(`Starting single query search: ${query}`);
         return this.searchSingle(query, zone, opt);
     }
@@ -85,8 +77,11 @@ export class SearchAPI {
             url: toSEUrl(opt.searchEngine, query),
             country: opt.country,
             format: opt.format || 'raw',
-            data_format: opt.dataFormat || 'markdown',
         };
+
+        if (opt.dataFormat && opt.dataFormat !== 'html') {
+            requestData.data_format = opt.dataFormat;
+        }
 
         dropEmptyKeys(requestData);
         logRequest('POST', REQUEST_API_URL, requestData);
@@ -99,26 +94,10 @@ export class SearchAPI {
                 dispatcher: getDispatcher({ timeout: opt.timeout }),
             });
 
-            const responseTxt = await response.body.text();
-
-            if (response.statusCode >= 400) {
-                if (response.statusCode === 401)
-                    throw new AuthenticationError(
-                        'Invalid API key or insufficient permissions',
-                    );
-                if (response.statusCode === 400)
-                    throw new ValidationError(`Bad request: ${responseTxt}`);
-                throw new APIError(
-                    `Search failed: HTTP ${response.statusCode}`,
-                    response.statusCode,
-                    responseTxt,
-                );
+            const responseTxt = await assertResponse(response);
+            if (opt.format === 'json') {
+                return parseJSON<JSONResponse>(responseTxt);
             }
-
-            if (opt.format == 'json') {
-                return safeJsonParse(responseTxt);
-            }
-
             return responseTxt;
         } catch (e: any) {
             if (e instanceof BRDError) throw e;
@@ -147,14 +126,18 @@ export class SearchAPI {
                     }
                 });
 
-            logger.info(
-                `Completed batch search operation: ${results.length} results`,
-            );
+            const res = results.map((v) => {
+                if (v === PromisePool.failed || v === PromisePool.notRun)
+                    return new BRDError('Unknown error occurred');
+                return v as Exclude<typeof v, symbol>;
+            });
 
-            return results;
+            logger.info(`Completed batch operation: ${res.length} results`);
+
+            return res;
         } catch (error: any) {
-            logger.error(`Batch search failed: ${error.message}`);
-            throw new APIError(`Batch search failed:`, error.message);
+            logger.error(`Batch operation failed: ${error.message}`);
+            throw new APIError(`Batch operation failed:`, error.message);
         }
     }
 }

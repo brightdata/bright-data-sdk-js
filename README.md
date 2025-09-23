@@ -88,7 +88,7 @@ console.log(results); // Returns array of markdown strings
 
 // Different data formats available
 const htmlResult = client.scrape('https://example.com', {
-    data_format: 'raw', // Returns raw HTML (default: 'markdown')
+    data_format: 'html', // Returns raw HTML (default: 'html')
 });
 
 const screenshotResult = client.scrape('https://example.com', {

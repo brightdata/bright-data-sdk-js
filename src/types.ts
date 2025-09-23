@@ -47,10 +47,10 @@ type BaseRequestOptions = {
      */
     country?: string;
     /**
-     * Additional format transformation (default: "markdown")
-     * Available values: 'markdown' | 'screenshot'
+     * Additional format transformation (default: "html")
+     * Available values: 'html' | 'markdown' | 'screenshot'
      */
-    dataFormat?: 'markdown' | 'screenshot';
+    dataFormat?: 'html' | 'markdown' | 'screenshot';
 } & FetchingOptions;
 
 export type ScrapeOptions = {

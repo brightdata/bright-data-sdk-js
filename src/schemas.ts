@@ -9,8 +9,8 @@ export const ApiKeySchema = z
 export const VerboseSchema = z.stringbool().optional();
 
 const SearchQuerySchema = z
-    .string('Invalid URL format')
-    .min(1, 'URL cannot be empty')
+    .string()
+    .min(1, 'Search query cannot be empty')
     .max(2048, 'Search query cannot exceed 2048 characters');
 
 const SearchQueryListSchema = z
@@ -62,7 +62,7 @@ export const ClientOptionsSchema = z
     })
     .optional();
 
-const ScrapeOptionsBaseSchema = z.object({
+const RequestOptionsBaseSchema = z.object({
     zone: ZoneNameSchema.optional(),
     country: z
         .string()
@@ -77,7 +77,7 @@ const ScrapeOptionsBaseSchema = z.object({
         .transform((v) => v.toUpperCase() as 'GET' | 'POST')
         .optional(),
     format: z.enum(['json', 'raw']).optional(),
-    dataFormat: z.enum(['markdown', 'screenshot']).optional(),
+    dataFormat: z.enum(['html', 'markdown', 'screenshot']).optional(),
 });
 
 const FetchingOptionsSchema = z.object({
@@ -87,14 +87,14 @@ const FetchingOptionsSchema = z.object({
 
 export const ScrapeOptionsSchema = z
     .object({
-        ...ScrapeOptionsBaseSchema.shape,
+        ...RequestOptionsBaseSchema.shape,
         ...FetchingOptionsSchema.shape,
     })
     .optional();
 
 export const SearchOptionsSchema = z
     .object({
-        ...ScrapeOptionsBaseSchema.shape,
+        ...RequestOptionsBaseSchema.shape,
         ...FetchingOptionsSchema.shape,
         searchEngine: z.enum(['google', 'bing', 'yandex']).optional(),
     })

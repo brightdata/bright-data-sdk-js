@@ -126,7 +126,7 @@ export class bdclient {
      *     method: 'GET',                 // 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
      *     country: 'us',                 // 'us' | 'gb' | 'de' | 'jp' etc.
      *     format: 'raw',                 // 'raw' | 'json'
-     *     dataFormat: 'markdown',        // 'markdown' | 'screenshot'
+     *     dataFormat: 'markdown',        // 'html' | 'markdown' | 'screenshot'
      *     timeout: 30000,                // 5000-300000 milliseconds
      *     zone: 'my_custom_zone'         // Custom zone name
      * });
@@ -170,10 +170,10 @@ export class bdclient {
      *
      * // Advanced search options
      * const results =  await client.search('machine learning courses', {
-     *     searchEngine: 'bing',         // 'google' | 'bing' | 'yandex'
+     *     searchEngine: 'bing',          // 'google' | 'bing' | 'yandex'
      *     country: 'us',                 // 'us' | 'gb' | 'de' | 'jp' etc.
-     *     format: 'json',        // 'raw' | 'json'
-     *     dataFormat: 'markdown',        // 'markdown' | 'screenshot'
+     *     format: 'json',                // 'raw' | 'json'
+     *     dataFormat: 'markdown',        // 'html' | 'markdown' | 'screenshot'
      *     timeout: 20000,                // 5000-300000 milliseconds
      *     zone: 'my_serp_zone'           // Custom zone
      * });
@@ -429,8 +429,8 @@ export class bdclient {
     async listZones(): Promise<ZoneInfo[]> {
         try {
             return await this.zoneManager.listZones();
-        } catch (e: any) {
-            logger.error(`Failed to list zones: ${e.message}`);
+        } catch (e: unknown) {
+            logger.error(`Failed to list zones: ${(e as Error).message}`);
             return [];
         }
     }

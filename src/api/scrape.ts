@@ -1,15 +1,10 @@
 import { PromisePool } from '@supercharge/promise-pool';
 import { REQUEST_API_URL, DEFAULT_CONCURRENCY } from '../utils/constants';
 import { getLogger, logRequest } from '../utils/logging-config';
-import {
-    ValidationError,
-    APIError,
-    AuthenticationError,
-    BRDError,
-} from '../utils/errors';
-import { request, getDispatcher } from '../utils/net';
+import { APIError, BRDError } from '../utils/errors';
+import { request, getDispatcher, assertResponse } from '../utils/net';
 import { getAuthHeaders } from '../utils/auth';
-import { dropEmptyKeys, safeJsonParse } from '../utils/misc';
+import { dropEmptyKeys, parseJSON } from '../utils/misc';
 import { ZoneNameSchema } from '../schemas';
 import type { ScrapeOptions, JSONResponse } from '../types';
 import type { ZoneManager } from '../utils/zone-manager';
@@ -22,7 +17,7 @@ interface ScrapeQueryBody {
     format: ScrapeOptions['format'];
     method?: ScrapeOptions['method'];
     country?: ScrapeOptions['country'];
-    data_format?: ScrapeOptions['dataFormat'];
+    data_format?: 'markdown' | 'screenshot';
 }
 
 interface WebScraperOptions {
@@ -67,8 +62,11 @@ export class WebScraper {
             method: opt.method,
             country: opt.country,
             format: opt.format || 'raw',
-            data_format: opt.dataFormat || 'markdown',
         };
+
+        if (opt.dataFormat && opt.dataFormat !== 'html') {
+            requestData.data_format = opt.dataFormat;
+        }
 
         dropEmptyKeys(requestData);
         logRequest('POST', REQUEST_API_URL, requestData);
@@ -81,28 +79,10 @@ export class WebScraper {
                 dispatcher: getDispatcher({ timeout: opt.timeout }),
             });
 
-            const responseTxt = await response.body.text();
-
-            if (response.statusCode >= 400) {
-                if (response.statusCode === 401) {
-                    throw new AuthenticationError(
-                        'Invalid API key or insufficient permissions',
-                    );
-                }
-                if (response.statusCode === 400) {
-                    throw new ValidationError(`Bad request: ${responseTxt}`);
-                }
-                throw new APIError(
-                    `Scraping failed: HTTP ${response.statusCode}`,
-                    response.statusCode,
-                    responseTxt,
-                );
-            }
-
+            const responseTxt = await assertResponse(response);
             if (opt.format === 'json') {
-                return safeJsonParse(responseTxt);
+                return parseJSON<JSONResponse>(responseTxt);
             }
-
             return responseTxt;
         } catch (e: any) {
             if (e instanceof BRDError) throw e;
@@ -126,19 +106,24 @@ export class WebScraper {
                 .process(async (url) => {
                     try {
                         return await this.scrapeSingle(url, zone, opt);
-                    } catch (e) {
-                        return e;
+                    } catch (e: unknown) {
+                        return e as BRDError;
                     }
                 });
 
-            logger.info(
-                `Completed batch scraping operation: ${results.length} results`,
-            );
+            const res = results.map((v) => {
+                if (v === PromisePool.failed || v === PromisePool.notRun)
+                    return new BRDError('Unknown error occurred');
+                return v as Exclude<typeof v, symbol>;
+            });
 
-            return results;
-        } catch (error: any) {
-            logger.error(`Batch scraping failed: ${error.message}`);
-            throw new APIError(`Batch scraping failed:`, error.message);
+            logger.info(`Completed batch operation: ${res.length} results`);
+
+            return res;
+        } catch (error: unknown) {
+            const err = error as Error;
+            logger.error(`Batch operation failed: ${err.message}`);
+            throw new APIError(`Batch operation failed: ${err.message}`);
         }
     }
 }

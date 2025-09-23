@@ -1,20 +1,18 @@
 import { getLogger } from './logging-config';
 
-export function safeJsonParse(data: unknown) {
-    if (typeof data != 'string') return data;
-
+export function parseJSON<T>(data: string): T {
     try {
         return JSON.parse(data);
-    } catch (e: any) {
+    } catch (e: unknown) {
         const logger = getLogger('utils.json');
         logger.warning(
             'Failed to parse JSON response, returning as ' + 'string',
             {
-                error: e.message,
+                error: (e as Error).message,
                 data: data.substring(0, 200) + (data.length > 200 ? '...' : ''),
             },
         );
-        return data;
+        throw new Error('Failed to parse JSON response');
     }
 }
 
