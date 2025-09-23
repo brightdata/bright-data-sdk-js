@@ -96,7 +96,10 @@ export const SearchOptionsSchema = z
     .object({
         ...RequestOptionsBaseSchema.shape,
         ...FetchingOptionsSchema.shape,
-        searchEngine: z.enum(['google', 'bing', 'yandex']).optional(),
+        searchEngine: z
+            .enum(['google', 'bing', 'yandex', 'GOOGLE', 'BING', 'YANDEX'])
+            .transform((v) => v.toLowerCase() as 'google' | 'bing' | 'yandex')
+            .optional(),
     })
     .optional();
 

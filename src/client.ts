@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { WebScraper } from './api/scrape';
+import { ScrapeAPI } from './api/scrape';
 import { SearchAPI } from './api/search';
 import { ZoneManager } from './utils/zone-manager';
 import { setupLogging, getLogger } from './utils/logging-config';
@@ -8,7 +8,7 @@ import {
     DEFAULT_WEB_UNLOCKER_ZONE,
     DEFAULT_SERP_ZONE,
 } from './utils/constants';
-import { ValidationError } from './utils/errors';
+import { BRDError, ValidationError } from './utils/errors';
 import { maskKey } from './utils/misc';
 import {
     ClientOptionsSchema,
@@ -25,6 +25,7 @@ import type {
     ScrapeOptions,
     SearchOptions,
     BdClientOptions,
+    JSONResponse,
 } from './types';
 
 const logger = getLogger('client');
@@ -57,7 +58,7 @@ const logger = getLogger('client');
  * ```
  */
 export class bdclient {
-    private webScraper: WebScraper;
+    private scrapeAPI: ScrapeAPI;
     private searchApi: SearchAPI;
     private zoneManager: ZoneManager;
 
@@ -86,7 +87,7 @@ export class bdclient {
         logger.info('HTTP client configured with secure headers');
 
         this.zoneManager = new ZoneManager({ apiKey });
-        this.webScraper = new WebScraper({
+        this.scrapeAPI = new ScrapeAPI({
             apiKey,
             zoneManager: this.zoneManager,
             autoCreateZones: opt.autoCreateZones,
@@ -138,6 +139,11 @@ export class bdclient {
      * });
      * ```
      */
+    async scrape(query: string, options?: ScrapeOptions): Promise<string>;
+    async scrape(
+        query: string[],
+        options?: ScrapeOptions,
+    ): Promise<Array<string | BRDError | JSONResponse>>;
     async scrape(url: string | string[], options: ScrapeOptions = {}) {
         const safeUrl = assertSchema(URLParamSchema, url);
         const safeOptions = assertSchema(ScrapeOptionsSchema, options);
@@ -147,7 +153,7 @@ export class bdclient {
                 `${Array.isArray(url) ? url.length : 1} URL(s)`,
         );
 
-        return this.webScraper.scrape(safeUrl, safeOptions);
+        return this.scrapeAPI.handle(safeUrl, safeOptions);
     }
     /**
      * Search using a single query via Bright Data SERP API
@@ -195,16 +201,21 @@ export class bdclient {
      * });
      * ```
      */
+    async search(query: string, options?: SearchOptions): Promise<string>;
+    async search(
+        query: string[],
+        options?: SearchOptions,
+    ): Promise<Array<string | BRDError | JSONResponse>>;
     async search(query: string | string[], options: SearchOptions = {}) {
         const safeQuery = assertSchema(SearchQueryParamSchema, query);
         const safeOptions = assertSchema(SearchOptionsSchema, options);
 
         logger.info(
             'Starting search operation for ' +
-                `${Array.isArray(safeQuery) ? safeQuery.length : 1} safeQuery/queries`,
+                `${Array.isArray(safeQuery) ? safeQuery.length : 1} query/queries`,
         );
 
-        return this.searchApi.search(safeQuery, safeOptions);
+        return this.searchApi.handle(safeQuery, safeOptions);
     }
     /**
      * Download content to a local file

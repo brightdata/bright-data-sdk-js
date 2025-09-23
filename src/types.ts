@@ -28,7 +28,8 @@ export interface FetchingOptions {
     timeout?: number;
 }
 
-type BaseRequestOptions = {
+export type RequestOptions = {
+    zone?: string;
     /**
      * Response format (default: "raw")
      * Available values:
@@ -59,7 +60,7 @@ export type ScrapeOptions = {
      * @example 'web_unlocker_1' | 'my_scraping_zone'
      */
     zone?: string;
-} & BaseRequestOptions;
+} & RequestOptions;
 
 export type SearchEngine = 'google' | 'bing' | 'yandex';
 
@@ -77,7 +78,7 @@ export type SearchOptions = {
      * @example 'serp_api_1' | 'my_search_zone'
      */
     zone?: string;
-} & BaseRequestOptions;
+} & RequestOptions;
 
 export interface BdClientOptions {
     /**
