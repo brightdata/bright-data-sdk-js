@@ -2,7 +2,14 @@ import type { BRDError } from './utils/errors';
 
 export interface ZoneInfo {
     name: string;
-    type: string;
+    type:
+        | 'dc'
+        | 'serp'
+        | 'unblocker'
+        | 'res_rotating'
+        | 'res_static'
+        | 'browser_api'
+        | 'mobile';
     ips: number;
     bandwidth: number;
     created?: string;
@@ -10,7 +17,7 @@ export interface ZoneInfo {
 }
 
 export type ZoneInfoResponse = ZoneInfo & {
-    zone_type?: string;
+    zone_type?: ZoneInfo['type'];
     created_at?: string;
     zone?: string;
 };

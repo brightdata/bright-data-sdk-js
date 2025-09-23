@@ -42,17 +42,13 @@ export const assertResponse = async (response: Dispatcher.ResponseData) => {
 
     if (response.statusCode === 401) {
         throw new AuthenticationError(
-            'Invalid API key or insufficient permissions',
+            'invalid API key or insufficient permissions',
         );
     }
 
     if (response.statusCode === 400) {
-        throw new ValidationError(`Bad request: ${responseTxt}`);
+        throw new ValidationError(`bad request: ${responseTxt}`);
     }
 
-    throw new APIError(
-        `Scraping failed: HTTP ${response.statusCode}`,
-        response.statusCode,
-        responseTxt,
-    );
+    throw new APIError(`request failed`, response.statusCode, responseTxt);
 };

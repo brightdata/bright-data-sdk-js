@@ -1,4 +1,4 @@
-import { getLogger } from './logging-config';
+import { getLogger } from './logger';
 
 export function parseJSON<T>(data: string): T {
     try {

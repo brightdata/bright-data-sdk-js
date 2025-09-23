@@ -1,6 +1,6 @@
 import { PromisePool } from '@supercharge/promise-pool';
-import { REQUEST_API_URL, DEFAULT_CONCURRENCY } from '../utils/constants';
-import { getLogger, logRequest } from '../utils/logging-config';
+import { API_ENDPOINT, DEFAULT_CONCURRENCY } from '../utils/constants';
+import { getLogger, logRequest } from '../utils/logger';
 import { APIError, BRDError } from '../utils/errors';
 import { request, getDispatcher, assertResponse } from '../utils/net';
 import { getAuthHeaders } from '../utils/auth';
@@ -12,7 +12,7 @@ import type {
     SingleResponse,
     BatchResponse,
 } from '../types';
-import type { ZoneManager } from '../utils/zone-manager';
+import type { ZonesAPI } from './zones';
 
 interface RequestQueryBody {
     url: string;
@@ -25,7 +25,7 @@ interface RequestQueryBody {
 
 export interface RequestAPIOptions {
     apiKey: string;
-    zoneManager: ZoneManager;
+    zonesAPI: ZonesAPI;
     autoCreateZones?: boolean;
     zone?: string;
 }
@@ -35,12 +35,12 @@ export class RequestAPI {
     private authHeaders: ReturnType<typeof getAuthHeaders>;
     private logger: ReturnType<typeof getLogger>;
     private zone?: string;
-    private zoneManager: ZoneManager;
+    private zonesAPI: ZonesAPI;
 
     constructor(opts: RequestAPIOptions) {
         this.zone = opts.zone;
         this.authHeaders = getAuthHeaders(opts.apiKey);
-        this.zoneManager = opts.zoneManager;
+        this.zonesAPI = opts.zonesAPI;
     }
 
     protected init() {
@@ -101,22 +101,10 @@ export class RequestAPI {
     ): Promise<SingleResponse> {
         const body = this.getRequestBody(url, zone, opt);
 
-        logRequest('POST', REQUEST_API_URL, body);
-
-        console.log(
-            JSON.stringify(
-                {
-                    method: 'POST',
-                    body: body,
-                    headers: this.authHeaders,
-                },
-                null,
-                3,
-            ),
-        );
+        logRequest('POST', API_ENDPOINT.REQUEST, body);
 
         try {
-            const response = await request(REQUEST_API_URL, {
+            const response = await request(API_ENDPOINT.REQUEST, {
                 method: 'POST',
                 body: JSON.stringify(body),
                 headers: this.authHeaders,

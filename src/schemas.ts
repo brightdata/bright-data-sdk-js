@@ -10,12 +10,12 @@ export const VerboseSchema = z.stringbool().optional();
 
 const SearchQuerySchema = z
     .string()
-    .min(1, 'Search query cannot be empty')
-    .max(2048, 'Search query cannot exceed 2048 characters');
+    .min(1, 'search query cannot be empty')
+    .max(2048, 'search query cannot exceed 2048 characters');
 
 const SearchQueryListSchema = z
     .array(SearchQuerySchema)
-    .max(50, 'Query list cannot contain more than 50 queries');
+    .min(1, 'search query list cannot be empty');
 
 export const SearchQueryParamSchema = z.union([
     SearchQuerySchema,
@@ -27,25 +27,23 @@ const URLSchema = z
     .min(1, 'URL cannot be empty')
     .max(8192, 'URL exceeds maximum length of 8192 characters');
 
-const URLListSchema = z
-    .array(URLSchema)
-    .max(100, 'URL list cannot contain more than 100 URLs');
+const URLListSchema = z.array(URLSchema).min(1, 'URL list cannot be empty');
 
 export const URLParamSchema = z.union([URLSchema, URLListSchema]);
 
 export const ZoneNameSchema = z
     .string()
-    .min(3, 'Zone name must be at least 3 characters long')
-    .max(63, 'Zone name must not exceed 63 characters')
+    .min(3, 'zone name must be at least 3 characters long')
+    .max(63, 'zone name must not exceed 63 characters')
     .regex(
-        /^[a-zA-Z0-9_-]+$/,
-        'Zone name can only contain letters, numbers, hyphens, and underscores',
+        /^[a-z0-9_]+$/,
+        'zone name can only contain letters, numbers, and underscores',
     )
-    .refine((val) => !val.startsWith('-') && !val.startsWith('_'), {
-        message: 'Zone name cannot start with a hyphen or underscore',
+    .refine((val) => !val.startsWith('_'), {
+        message: 'zone name cannot start with an underscore',
     })
-    .refine((val) => !val.endsWith('-') && !val.endsWith('_'), {
-        message: 'Zone name cannot end with a hyphen or underscore',
+    .refine((val) => !val.endsWith('_'), {
+        message: 'zone name cannot end with an underscore',
     });
 
 export const ClientOptionsSchema = z
@@ -68,7 +66,7 @@ const RequestOptionsBaseSchema = z.object({
         .string()
         .length(
             2,
-            'Country code must be exactly 2 characters (ISO 3166-1 alpha-2) or empty',
+            'country code must be exactly 2 characters (ISO 3166-1 alpha-2) or empty',
         )
         .transform((v) => v.toLowerCase())
         .optional(),

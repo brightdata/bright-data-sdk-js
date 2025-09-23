@@ -2,8 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import { ScrapeAPI } from './api/scrape';
 import { SearchAPI } from './api/search';
-import { ZoneManager } from './utils/zone-manager';
-import { setupLogging, getLogger } from './utils/logging-config';
+import { ZonesAPI } from './api/zones';
+import { setupLogging, getLogger } from './utils/logger';
 import {
     DEFAULT_WEB_UNLOCKER_ZONE,
     DEFAULT_SERP_ZONE,
@@ -60,8 +60,8 @@ const logger = getLogger('client');
  */
 export class bdclient {
     private scrapeAPI: ScrapeAPI;
-    private searchApi: SearchAPI;
-    private zoneManager: ZoneManager;
+    private searchAPI: SearchAPI;
+    private zonesAPI: ZonesAPI;
 
     constructor(options: BdClientOptions) {
         const opt = assertSchema(ClientOptionsSchema, options || {});
@@ -87,19 +87,19 @@ export class bdclient {
         logger.info(`API key validated successfully: ${maskKey(apiKey)}`);
         logger.info('HTTP client configured with secure headers');
 
-        this.zoneManager = new ZoneManager({ apiKey });
+        this.zonesAPI = new ZonesAPI({ apiKey });
         this.scrapeAPI = new ScrapeAPI({
             apiKey,
-            zoneManager: this.zoneManager,
+            zonesAPI: this.zonesAPI,
             autoCreateZones: opt.autoCreateZones,
             zone:
                 opt.webUnlockerZone ||
                 BRIGHTDATA_WEB_UNLOCKER_ZONE ||
                 DEFAULT_WEB_UNLOCKER_ZONE,
         });
-        this.searchApi = new SearchAPI({
+        this.searchAPI = new SearchAPI({
             apiKey,
-            zoneManager: this.zoneManager,
+            zonesAPI: this.zonesAPI,
             autoCreateZones: opt.autoCreateZones,
             zone: opt.serpZone || BRIGHTDATA_SERP_ZONE || DEFAULT_SERP_ZONE,
         });
@@ -213,8 +213,8 @@ export class bdclient {
         );
 
         return Array.isArray(safeQuery)
-            ? this.searchApi.handle(safeQuery, safeOptions)
-            : this.searchApi.handle(safeQuery, safeOptions);
+            ? this.searchAPI.handle(safeQuery, safeOptions)
+            : this.searchAPI.handle(safeQuery, safeOptions);
     }
     /**
      * Download content to a local file
@@ -437,11 +437,6 @@ export class bdclient {
      * ```
      */
     async listZones(): Promise<ZoneInfo[]> {
-        try {
-            return await this.zoneManager.listZones();
-        } catch (e: unknown) {
-            logger.error(`Failed to list zones: ${(e as Error).message}`);
-            return [];
-        }
+        return await this.zonesAPI.listZones();
     }
 }

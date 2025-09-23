@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 
-// Read version from package.json
 let version;
 try {
     const packagePath = path.join(__dirname, '../../package.json');
@@ -9,7 +8,7 @@ try {
     version = packageData.version;
 } catch {
     // Fallback version if package.json can't be read
-    version = '1.1.0';
+    version = '0.0.0';
 }
 
 // Version and User-Agent
@@ -23,11 +22,13 @@ export const MAX_RETRIES = 3;
 export const RETRY_BACKOFF_FACTOR = 1.5;
 export const RETRY_STATUSES = [429, 500, 502, 503, 504];
 
-// API Endpoints
-export const API_BASE_URL = 'https://api.brightdata.com';
-export const ZONE_API_URL = `${API_BASE_URL}/zone`;
-export const REQUEST_API_URL = `${API_BASE_URL}/request`;
+const API_BASE_URL = 'https://api.brightdata.com';
 
-// Default Zone Names
+export const API_ENDPOINT = {
+    REQUEST: `${API_BASE_URL}/request`,
+    ZONE: `${API_BASE_URL}/zone`,
+    ZONE_LIST: `${API_BASE_URL}/zone/get_active_zones`,
+};
+
 export const DEFAULT_WEB_UNLOCKER_ZONE = 'sdk_unlocker';
 export const DEFAULT_SERP_ZONE = 'sdk_serp';
