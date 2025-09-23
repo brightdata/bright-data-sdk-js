@@ -8,7 +8,7 @@ import {
     DEFAULT_WEB_UNLOCKER_ZONE,
     DEFAULT_SERP_ZONE,
 } from './utils/constants';
-import { BRDError, ValidationError } from './utils/errors';
+import { ValidationError } from './utils/errors';
 import { maskKey } from './utils/misc';
 import {
     ClientOptionsSchema,
@@ -25,7 +25,8 @@ import type {
     ScrapeOptions,
     SearchOptions,
     BdClientOptions,
-    JSONResponse,
+    SingleResponse,
+    BatchResponse,
 } from './types';
 
 const logger = getLogger('client');
@@ -139,11 +140,8 @@ export class bdclient {
      * });
      * ```
      */
-    async scrape(query: string, options?: ScrapeOptions): Promise<string>;
-    async scrape(
-        query: string[],
-        options?: ScrapeOptions,
-    ): Promise<Array<string | BRDError | JSONResponse>>;
+    async scrape(url: string, opts?: ScrapeOptions): Promise<SingleResponse>;
+    async scrape(url: string[], opts?: ScrapeOptions): Promise<BatchResponse>;
     async scrape(url: string | string[], options: ScrapeOptions = {}) {
         const safeUrl = assertSchema(URLParamSchema, url);
         const safeOptions = assertSchema(ScrapeOptionsSchema, options);
@@ -153,7 +151,9 @@ export class bdclient {
                 `${Array.isArray(url) ? url.length : 1} URL(s)`,
         );
 
-        return this.scrapeAPI.handle(safeUrl, safeOptions);
+        return Array.isArray(safeUrl)
+            ? this.scrapeAPI.handle(safeUrl, safeOptions)
+            : this.scrapeAPI.handle(safeUrl, safeOptions);
     }
     /**
      * Search using a single query via Bright Data SERP API
@@ -201,11 +201,8 @@ export class bdclient {
      * });
      * ```
      */
-    async search(query: string, options?: SearchOptions): Promise<string>;
-    async search(
-        query: string[],
-        options?: SearchOptions,
-    ): Promise<Array<string | BRDError | JSONResponse>>;
+    async search(q: string, opts?: SearchOptions): Promise<SingleResponse>;
+    async search(q: string[], opts?: SearchOptions): Promise<BatchResponse>;
     async search(query: string | string[], options: SearchOptions = {}) {
         const safeQuery = assertSchema(SearchQueryParamSchema, query);
         const safeOptions = assertSchema(SearchOptionsSchema, options);
@@ -215,7 +212,9 @@ export class bdclient {
                 `${Array.isArray(safeQuery) ? safeQuery.length : 1} query/queries`,
         );
 
-        return this.searchApi.handle(safeQuery, safeOptions);
+        return Array.isArray(safeQuery)
+            ? this.searchApi.handle(safeQuery, safeOptions)
+            : this.searchApi.handle(safeQuery, safeOptions);
     }
     /**
      * Download content to a local file

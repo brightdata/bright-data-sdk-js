@@ -1,3 +1,5 @@
+import type { BRDError } from './utils/errors';
+
 export interface ZoneInfo {
     name: string;
     type: string;
@@ -123,3 +125,6 @@ export interface JSONResponse {
     headers: Record<string, string>;
     body: string;
 }
+
+export type SingleResponse = string | JSONResponse;
+export type BatchResponse = Array<SingleResponse | BRDError>;

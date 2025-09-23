@@ -1,7 +1,7 @@
 import type { SearchOptions, SearchEngine } from '../types';
 import { RequestAPI, type RequestAPIOptions } from './request';
 
-const toSEUrl = (searchEngine: SearchEngine = 'google', query: string) => {
+const toSERPrl = (searchEngine: SearchEngine = 'google', query: string) => {
     const encodedQuery = encodeURIComponent(query.trim());
 
     switch (searchEngine.toLowerCase()) {
@@ -23,7 +23,7 @@ export class SearchAPI extends RequestAPI {
     }
 
     protected getURL(content: string, opt: SearchOptions) {
-        return toSEUrl(opt.searchEngine, content);
+        return toSERPrl(opt.searchEngine, content);
     }
 
     protected getMethod() {

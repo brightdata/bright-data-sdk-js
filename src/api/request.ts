@@ -6,7 +6,12 @@ import { request, getDispatcher, assertResponse } from '../utils/net';
 import { getAuthHeaders } from '../utils/auth';
 import { dropEmptyKeys, parseJSON } from '../utils/misc';
 import { ZoneNameSchema } from '../schemas';
-import type { RequestOptions, JSONResponse } from '../types';
+import type {
+    RequestOptions,
+    JSONResponse,
+    SingleResponse,
+    BatchResponse,
+} from '../types';
 import type { ZoneManager } from '../utils/zone-manager';
 
 interface RequestQueryBody {
@@ -26,11 +31,11 @@ export interface RequestAPIOptions {
 }
 
 export class RequestAPI {
-    protected authHeaders: ReturnType<typeof getAuthHeaders>;
     protected name: string;
-    protected zoneManager: ZoneManager;
-    protected logger: ReturnType<typeof getLogger>;
-    protected zone?: string;
+    private authHeaders: ReturnType<typeof getAuthHeaders>;
+    private logger: ReturnType<typeof getLogger>;
+    private zone?: string;
+    private zoneManager: ZoneManager;
 
     constructor(opts: RequestAPIOptions) {
         this.zone = opts.zone;
@@ -42,6 +47,8 @@ export class RequestAPI {
         this.logger = getLogger(`api.${this.name}`);
     }
 
+    async handle(val: string, opts?: RequestOptions): Promise<SingleResponse>;
+    async handle(val: string[], opts?: RequestOptions): Promise<BatchResponse>;
     async handle(input: string | string[], opt: RequestOptions = {}) {
         const zone = ZoneNameSchema.parse(opt.zone || this.zone);
 
@@ -91,10 +98,22 @@ export class RequestAPI {
         url: string,
         zone: string,
         opt: RequestOptions = {},
-    ) {
+    ): Promise<SingleResponse> {
         const body = this.getRequestBody(url, zone, opt);
 
         logRequest('POST', REQUEST_API_URL, body);
+
+        console.log(
+            JSON.stringify(
+                {
+                    method: 'POST',
+                    body: body,
+                    headers: this.authHeaders,
+                },
+                null,
+                3,
+            ),
+        );
 
         try {
             const response = await request(REQUEST_API_URL, {
@@ -119,7 +138,7 @@ export class RequestAPI {
         urls: string[],
         zone: string,
         opt: RequestOptions = {},
-    ) {
+    ): Promise<BatchResponse> {
         const limit = opt.concurrency || DEFAULT_CONCURRENCY;
         this.logger.info(
             `processing ${urls.length} items, concurrency is ${limit}`,
