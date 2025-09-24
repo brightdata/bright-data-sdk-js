@@ -90,16 +90,14 @@ export const ScrapeOptionsSchema = z
     })
     .optional();
 
-export const SearchOptionsSchema = z
-    .object({
-        ...RequestOptionsBaseSchema.shape,
-        ...FetchingOptionsSchema.shape,
-        searchEngine: z
-            .enum(['google', 'bing', 'yandex', 'GOOGLE', 'BING', 'YANDEX'])
-            .transform((v) => v.toLowerCase() as 'google' | 'bing' | 'yandex')
-            .optional(),
-    })
-    .optional();
+export const SearchOptionsSchema = z.object({
+    ...RequestOptionsBaseSchema.shape,
+    ...FetchingOptionsSchema.shape,
+    searchEngine: z
+        .enum(['google', 'bing', 'yandex', 'GOOGLE', 'BING', 'YANDEX'])
+        .transform((v) => v.toLowerCase() as 'google' | 'bing' | 'yandex')
+        .optional(),
+});
 
 const ContentFormatSchema = z
     .enum(['json', 'txt', 'JSON', 'TXT'])

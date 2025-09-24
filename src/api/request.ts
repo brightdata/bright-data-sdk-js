@@ -8,7 +8,11 @@ import { dropEmptyKeys, parseJSON } from '../utils/misc';
 import { ZoneNameSchema } from '../schemas';
 import type {
     RequestOptions,
-    JSONResponse,
+    SingleRawResponse,
+    BatchRawResponse,
+    RequestJSONOptions,
+    SingleJSONResponse,
+    BatchJSONResponse,
     SingleResponse,
     BatchResponse,
     ZoneType,
@@ -50,10 +54,18 @@ export class RequestAPI {
     init() {
         this.logger = getLogger(`api.${this.name}`);
     }
-
-    async handle(val: string, opts?: RequestOptions): Promise<SingleResponse>;
-    async handle(val: string[], opts?: RequestOptions): Promise<BatchResponse>;
-    async handle(val: string | string[], opts: RequestOptions = {}) {
+    // prettier-ignore
+    async handle(val: string, opts?: RequestJSONOptions): Promise<SingleJSONResponse>;
+    // prettier-ignore
+    async handle(val: string, opts?: RequestOptions): Promise<SingleRawResponse>;
+    // prettier-ignore
+    async handle(val: string[], opts?: RequestJSONOptions): Promise<BatchJSONResponse>;
+    // prettier-ignore
+    async handle(val: string[], opts?: RequestOptions): Promise<BatchRawResponse>;
+    async handle(
+        val: string | string[],
+        opts: RequestOptions | RequestJSONOptions = {},
+    ): Promise<SingleResponse | BatchResponse> {
         const zone = ZoneNameSchema.parse(opts.zone || this.zone);
 
         if (this.autoCreateZones) {
@@ -72,18 +84,14 @@ export class RequestAPI {
     }
 
     protected getURL(_content: string, _opt: RequestOptions): string {
-        throw new Error('Method not implemented.');
+        throw new Error('method not implemented.');
     }
 
     protected getMethod(_opt: RequestOptions): RequestOptions['method'] {
-        throw new Error('Method not implemented.');
+        throw new Error('method not implemented.');
     }
 
-    private getRequestBody(
-        content: string,
-        zone: string,
-        opt: RequestOptions,
-    ): RequestQueryBody {
+    private getRequestBody(content: string, zone: string, opt: RequestOptions) {
         const res: RequestQueryBody = {
             method: this.getMethod(opt),
             url: this.getURL(content, opt),
@@ -100,13 +108,16 @@ export class RequestAPI {
 
         return res;
     }
-
+    // prettier-ignore
+    private async handleSingle(val: string, zone: string, opt: RequestJSONOptions): Promise<SingleJSONResponse>;
+    // prettier-ignore
+    private async handleSingle(val: string, zone: string, opt: RequestOptions): Promise<SingleRawResponse>;
     private async handleSingle(
-        url: string,
+        val: string,
         zone: string,
-        opt: RequestOptions = {},
+        opt: RequestOptions | RequestJSONOptions = {},
     ): Promise<SingleResponse> {
-        const body = this.getRequestBody(url, zone, opt);
+        const body = this.getRequestBody(val, zone, opt);
 
         logRequest('POST', API_ENDPOINT.REQUEST, body);
 
@@ -120,7 +131,7 @@ export class RequestAPI {
 
             const responseTxt = await assertResponse(response);
             if (opt.format === 'json') {
-                return parseJSON<JSONResponse>(responseTxt);
+                return parseJSON<SingleJSONResponse>(responseTxt);
             }
             return responseTxt;
         } catch (e: unknown) {
@@ -128,19 +139,23 @@ export class RequestAPI {
             throw new APIError(`operation failed: ${(e as Error).message}`);
         }
     }
-
+    // prettier-ignore
+    private async handleBatch(inputs: string[], zone: string, opt: RequestJSONOptions): Promise<BatchJSONResponse>;
+    // prettier-ignore
+    private async handleBatch(inputs: string[], zone: string, opt: RequestOptions): Promise<BatchRawResponse>;
     private async handleBatch(
-        urls: string[],
+        inputs: string[],
         zone: string,
-        opt: RequestOptions = {},
+        opt: RequestOptions | RequestJSONOptions = {},
     ): Promise<BatchResponse> {
         const limit = opt.concurrency || DEFAULT_CONCURRENCY;
+
         this.logger.info(
-            `processing ${urls.length} items, concurrency is ${limit}`,
+            `processing ${inputs.length} items, concurrency is ${limit}`,
         );
 
         try {
-            const { results } = await PromisePool.for(urls)
+            const { results } = await PromisePool.for(inputs)
                 .withConcurrency(limit)
                 .useCorrespondingResults()
                 .process(async (url) => {

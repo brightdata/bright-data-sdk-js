@@ -22,12 +22,17 @@ import {
 } from './schemas';
 import type {
     ZoneInfo,
+    BdClientOptions,
+    SaveOptions,
+    ScrapeJSONOptions,
+    SearchJSONOptions,
+    SingleJSONResponse,
+    BatchJSONResponse,
     ScrapeOptions,
     SearchOptions,
-    BdClientOptions,
-    SingleResponse,
-    BatchResponse,
-    SaveOptions,
+    SingleRawResponse,
+    BatchRawResponse,
+    AnyResponse,
 } from './types';
 
 const logger = getLogger('client');
@@ -110,10 +115,6 @@ export class bdclient {
      *
      * Bypasses anti-bot protection and returns website content
      *
-     * @param url Single URL string to scrape
-     * @param opt Scraping options
-     * @returns Promise resolving to scraped data (HTML string or JSON object)
-     *
      * @example
      * ```javascript
      * // Simple scraping (returns HTML)
@@ -141,9 +142,18 @@ export class bdclient {
      * });
      * ```
      */
-    async scrape(url: string, opts?: ScrapeOptions): Promise<SingleResponse>;
-    async scrape(url: string[], opts?: ScrapeOptions): Promise<BatchResponse>;
-    async scrape(url: string | string[], options: ScrapeOptions = {}) {
+    // prettier-ignore
+    async scrape(url: string, opts?: ScrapeJSONOptions): Promise<SingleJSONResponse>;
+    // prettier-ignore
+    async scrape(url: string, opts?: ScrapeOptions): Promise<SingleRawResponse>;
+    // prettier-ignore
+    async scrape(url: string[], opts?: ScrapeJSONOptions): Promise<BatchJSONResponse>;
+    // prettier-ignore
+    async scrape(url: string[], opts?: ScrapeOptions): Promise<BatchRawResponse>;
+    async scrape(
+        url: string | string[],
+        options: ScrapeOptions | ScrapeJSONOptions = {},
+    ): Promise<AnyResponse> {
         const safeUrl = assertSchema(URLParamSchema, url);
         const safeOptions = assertSchema(ScrapeOptionsSchema, options);
 
@@ -160,10 +170,6 @@ export class bdclient {
      * Search using a single query via Bright Data SERP API
      *
      * Performs web search on Google, Bing, or Yandex with anti-bot protection bypass
-     *
-     * @param query Search query string
-     * @param opt Search options
-     * @returns Promise resolving to search results (HTML or structured data)
      *
      * @example
      * ```javascript
@@ -202,11 +208,20 @@ export class bdclient {
      * });
      * ```
      */
-    async search(q: string, opts?: SearchOptions): Promise<SingleResponse>;
-    async search(q: string[], opts?: SearchOptions): Promise<BatchResponse>;
-    async search(query: string | string[], options: SearchOptions = {}) {
+    // prettier-ignore
+    async search(query: string, options: SearchJSONOptions): Promise<SingleJSONResponse>;
+    // prettier-ignore
+    async search(query: string, options?: SearchOptions): Promise<SingleRawResponse>;
+    // prettier-ignore
+    async search(query: string[], options: SearchJSONOptions): Promise<BatchJSONResponse>;
+    // prettier-ignore
+    async search(query: string[], options?: SearchOptions): Promise<BatchRawResponse>;
+    async search(
+        query: string | string[],
+        options?: SearchOptions | SearchJSONOptions,
+    ): Promise<AnyResponse> {
         const safeQuery = assertSchema(SearchQueryParamSchema, query);
-        const safeOptions = assertSchema(SearchOptionsSchema, options);
+        const safeOptions = assertSchema(SearchOptionsSchema, options || {});
 
         logger.info(
             'starting search operation for ' +
@@ -221,12 +236,6 @@ export class bdclient {
      * Write content to a local file
      *
      * Saves scraped data or search results to disk in various formats
-     *
-     * @param content Content to save (SingleResponse or BatchResponse)
-     * @param options Saving options
-     * @param options.filename Output filename (optional, auto-generated if not provided)
-     * @param options.format File format: 'json' | 'txt' (default: 'json')
-     * @returns Promise resolving to the absolute file path where content was saved
      *
      * @example
      * ```javascript
@@ -259,10 +268,7 @@ export class bdclient {
      *  });
      * ```
      */
-    async saveResults(
-        content: SingleResponse | BatchResponse,
-        options: SaveOptions = {},
-    ) {
+    async saveResults(content: AnyResponse, options: SaveOptions = {}) {
         if (!content) {
             throw new ValidationError('content is required');
         }
@@ -277,8 +283,6 @@ export class bdclient {
      * List all active zones in your Bright Data account
      *
      * Retrieves information about available proxy zones and their status
-     *
-     * @returns Promise resolving to array of zone objects with details
      *
      * @example
      * ```javascript

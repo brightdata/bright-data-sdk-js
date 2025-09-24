@@ -65,17 +65,23 @@ export type RequestOptions = {
     dataFormat?: 'html' | 'markdown' | 'screenshot';
 } & FetchingOptions;
 
-export type ScrapeOptions = {
+export interface RequestJSONOptions extends RequestOptions {
+    format: 'json';
+}
+
+export interface ScrapeOptions extends RequestOptions {
     /**
      * Zone identifier (default: auto-configured web_unlocker_zone)
      * @example 'web_unlocker_1' | 'my_scraping_zone'
      */
     zone?: string;
-} & RequestOptions;
+}
+
+export type ScrapeJSONOptions = ScrapeOptions & RequestJSONOptions;
 
 export type SearchEngine = 'google' | 'bing' | 'yandex';
 
-export type SearchOptions = {
+export interface SearchOptions extends RequestOptions {
     /**
      * Search engine to use (default: "google")
      * Available values:
@@ -89,7 +95,9 @@ export type SearchOptions = {
      * @example 'serp_api_1' | 'my_search_zone'
      */
     zone?: string;
-} & RequestOptions;
+}
+
+export type SearchJSONOptions = SearchOptions & RequestJSONOptions;
 
 export interface BdClientOptions {
     /**
@@ -129,18 +137,31 @@ export interface BdClientOptions {
     verbose?: boolean;
 }
 
-export interface JSONResponse {
+export type SingleRawResponse = string;
+export interface SingleJSONResponse {
     status_code: number;
     headers: Record<string, string>;
     body: string;
 }
 
-export type SingleResponse = string | JSONResponse;
-export type BatchResponse = Array<SingleResponse | BRDError>;
+export type BatchJSONResponse = Array<SingleJSONResponse | BRDError>;
+export type BatchRawResponse = Array<SingleRawResponse | BRDError>;
+
+export type SingleResponse = SingleRawResponse | SingleJSONResponse;
+export type BatchResponse = BatchRawResponse | BatchJSONResponse;
+export type AnyResponse = SingleResponse | BatchResponse;
 
 export type ContentFormat = 'json' | 'txt';
 
 export interface SaveOptions {
+    /**
+     * Output filename (optional, auto-generated if not provided)
+     * @example "/path/to/output.txt"
+     */
     filename?: string;
+    /**
+     * File format: 'json' | 'txt' (default: 'json')
+     * @example "json"
+     */
     format?: ContentFormat;
 }
