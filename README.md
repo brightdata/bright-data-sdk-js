@@ -11,23 +11,23 @@ For a quick start, you can try running our example files in this repository.
 - **Web Scraping**: Scrape websites using Bright Data Web Unlocker API with proxy support
 - **Search Engine Results**: Perform web searches using Bright Data SERP API
 - **Multiple Search Engines**: Support for Google, Bing, and Yandex
-- **Parallel Processing**: Concurrent processing for multiple URLs or queries with synchronous API
+- **Parallel Processing**: Concurrent processing for multiple URLs or queries
 - **Robust Error Handling**: Comprehensive error handling with retry logic
 - **Zone Management**: Automatic zone creation and management
-- **Multiple Output Formats**: JSON, raw HTML, markdown, and more
+- **Multiple Output Formats**: HTML, JSON, and Markdown
 
 ## Installation
 
-Install the package from GitHub:
+Install the package from NPM:
 
 ```bash
-npm install brightdata/bright-data-sdk-js
+npm install @brightdata/sdk
 ```
 
 Or using yarn:
 
 ```bash
-yarn add brightdata/bright-data-sdk-js
+yarn add @brightdata/sdk
 ```
 
 ## Launch your first request
@@ -40,10 +40,10 @@ In your IDE, paste the following code for a simple scraper:
 const { bdclient } = require('brightdata');
 
 const client = new bdclient({
-    apiKey: 'your_api_key_here', // can also be defined as BRIGHTDATA_API_KEY in your .env file
+    apiKey: 'your_api_key_here', // can also be defined as BRIGHTDATA_API_KEY env variable
 });
 
-const result = client.search('pizza restaurants');
+const result = await client.search('pizza restaurants');
 console.log(result);
 ```
 
@@ -55,7 +55,7 @@ console.log(result);
 const { bdclient } = require('brightdata');
 
 const client = new bdclient({
-    apiKey: 'your_api_key_here', // can also be defined as BRIGHTDATA_API_KEY in your .env file
+    apiKey: 'your_api_key_here', // can also be defined as BRIGHTDATA_API_KEY env variable
 });
 ```
 
@@ -64,9 +64,9 @@ Or you can use a custom zone name:
 ```javascript
 const client = new bdclient({
     apiKey: 'your_api_key_here',
-    auto_create_zones: false, // Otherwise it creates zones automatically
-    web_unlocker_zone: 'custom_zone', // Custom zone name for web scraping
-    serp_zone: 'custom_serp_zone', // Custom zone name for search requests
+    autoCreateZones: false, // Otherwise it creates zones automatically
+    webUnlockerZone: 'custom_zone', // Custom zone name for web scraping
+    serpZone: 'custom_serp_zone', // Custom zone name for search requests
 });
 ```
 
@@ -74,8 +74,8 @@ const client = new bdclient({
 
 ```javascript
 // Single URL - Returns markdown string by default
-const result = client.scrape('https://example.com');
-console.log(result); // Output: markdown formatted web page content
+const result = await client.scrape('https://example.com');
+console.log(result); // Output: web page html content
 
 // Multiple URLs (parallel processing)
 const urls = [
@@ -83,27 +83,27 @@ const urls = [
     'https://example2.com',
     'https://example3.com',
 ];
-const results = client.scrape(urls);
-console.log(results); // Returns array of markdown strings
+const results = await client.scrape(urls);
+console.log(results); // Returns array of html strings
 
 // Different data formats available
-const htmlResult = client.scrape('https://example.com', {
-    data_format: 'html', // Returns raw HTML (default: 'html')
+const htmlResult = await client.scrape('https://example.com', {
+    dataFormat: 'html', // Returns raw HTML (default: 'html')
 });
 
-const screenshotResult = client.scrape('https://example.com', {
-    data_format: 'screenshot', // Returns base64 screenshot image
+const screenshotResult = await client.scrape('https://example.com', {
+    dataFormat: 'screenshot', // Returns base64 screenshot image
 });
 
 // Different response formats
-const jsonResult = client.scrape('https://example.com', {
-    response_format: 'json', // Returns parsed JSON object (default: 'raw' string)
+const jsonResult = await client.scrape('https://example.com', {
+    format: 'json', // Returns parsed JSON object (default: 'raw' string)
 });
 
 // Combined custom options
-const result = client.scrape('https://example.com', {
-    response_format: 'raw', // 'raw' (default) or 'json'
-    data_format: 'markdown', // 'markdown' (default), 'raw', 'screenshot', etc.
+const result = await client.scrape('https://example.com', {
+    format: 'raw', // 'raw' (default) or 'json'
+    dataFormat: 'markdown', // 'markdown' (default), 'raw', 'screenshot', etc.
     country: 'gb', // Two-letter country code
     method: 'GET', // HTTP method (default: 'GET')
 });
@@ -113,34 +113,37 @@ const result = client.scrape('https://example.com', {
 
 ```javascript
 // Single search query
-const result = client.search('pizza restaurants');
+const result = await client.search('pizza restaurants');
 console.log(result);
 
 // Multiple queries (parallel processing)
 const queries = ['pizza', 'restaurants', 'delivery'];
-const results = client.search(queries);
+const results = await client.search(queries);
 console.log(results);
 
 // Different search engines
-const result = client.search('pizza', {
-    search_engine: 'google', // can also be 'yandex' or 'bing'
+const result = await client.search('pizza', {
+    searchEngine: 'google', // can also be 'yandex' or 'bing'
 });
 console.log(result);
 
 // Custom options
-const results = client.search(['pizza', 'sushi'], {
+const results = await client.search(['pizza', 'sushi'], {
     country: 'gb',
-    response_format: 'raw',
+    format: 'raw',
 });
 console.log(results);
 ```
 
-### 4. Download Content
+### 4. Saving Results
 
 ```javascript
 // Download scraped content
-const data = client.scrape('https://example.com');
-const filePath = client.download_content(data, 'results.json', 'json');
+const data = await client.scrape('https://example.com');
+const filePath = await client.saveResults(data, {
+    filename: 'results.json',
+    format: 'json',
+});
 console.log(`Content saved to: ${filePath}`);
 ```
 
@@ -148,10 +151,10 @@ console.log(`Content saved to: ${filePath}`);
 
 ### Environment Variables
 
-Create a `.env` file in your project root:
+Set the following env variables (also configurable in client constructor)
 
 ```env
-BRIGHTDATA_API_KEY=your_bright_data_api_key
+BRIGHTDATA_API_KEY=your_bright_data_api_key          # Optional
 BRIGHTDATA_WEB_UNLOCKER_ZONE=your_web_unlocker_zone  # Optional
 BRIGHTDATA_SERP_ZONE=your_serp_zone                  # Optional
 ```
@@ -159,8 +162,7 @@ BRIGHTDATA_SERP_ZONE=your_serp_zone                  # Optional
 ### Manage Zones
 
 ```javascript
-// List all active zones (not available in sync version)
-const zones = client.list_zones();
+const zones = await client.listZones();
 console.log(`Found ${zones.length} zones`);
 ```
 
@@ -171,11 +173,11 @@ console.log(`Found ${zones.length} zones`);
 ```javascript
 const client = new bdclient({
     apiKey: 'string', // Your API key
-    auto_create_zones: true, // Auto-create zones if they don't exist
-    web_unlocker_zone: 'string', // Custom web unlocker zone name
-    serp_zone: 'string', // Custom SERP zone name
-    log_level: 'INFO', // Log level
-    structured_logging: true, // Use structured JSON logging
+    autoCreateZones: true, // Auto-create zones if they don't exist
+    webUnlockerZone: 'string', // Custom web unlocker zone name
+    serpZone: 'string', // Custom SERP zone name
+    logLevel: 'INFO', // Log level
+    structuredLogging: true, // Use structured JSON logging
     verbose: false, // Enable verbose logging
 });
 ```
@@ -191,36 +193,42 @@ Scrapes a single URL or array of URLs using the Web Unlocker.
 - `url` (string | Array<string>): Single URL string or array of URLs
 - `options` (Object, optional):
     - `zone` (string): Zone identifier (auto-configured if null)
-    - `response_format` (string): "json" or "raw" (default: "raw")
+    - `format` (string): "json" or "raw" (default: "raw")
     - `method` (string): HTTP method (default: "GET")
     - `country` (string): Two-letter country code (default: "")
-    - `data_format` (string): "markdown", "screenshot", etc. (default: "markdown")
-    - `async_request` (boolean): Enable async processing (default: false)
-    - `max_workers` (number): Max parallel workers (default: 10)
+    - `dataFormat` (string): "markdown", "screenshot", "html". (default: "html")
+    - `concurrency` (number): Max parallel workers (default: 10)
     - `timeout` (number): Request timeout in milliseconds (default: 30000)
 
 #### search(query, options)
 
-Searches using the SERP API. Accepts the same arguments as scrape(), plus:
+Searches using the SERP API
 
 **Parameters:**
 
 - `query` (string | Array<string>): Search query string or array of queries
 - `options` (Object, optional):
-    - `search_engine` (string): "google", "bing", or "yandex" (default: "google")
-    - Other parameters same as scrape()
+    - `searchEngine` (string): "google", "bing", or "yandex" (default: "google")
+    - `zone` (string): Zone identifier (auto-configured if null)
+    - `format` (string): "json" or "raw" (default: "raw")
+    - `method` (string): HTTP method (default: "GET")
+    - `country` (string): Two-letter country code (default: "")
+    - `dataFormat` (string): "markdown", "screenshot", "html". (default: "html")
+    - `concurrency` (number): Max parallel workers (default: 10)
+    - `timeout` (number): Request timeout in milliseconds (default: 30000)
 
-#### download_content(content, filename, format)
+#### saveResults(content, options)
 
 Save content to local file.
 
 **Parameters:**
 
 - `content` (any): Content to save
-- `filename` (string, optional): Output filename (auto-generated if null)
-- `format` (string): File format ("json", "csv", "txt", etc.) (default: "json")
+- `options` (Object, optional):
+    - `filename` (string): Output filename (auto-generated if null)
+    - `format` (string): File format ("json", "csv", "txt", etc.) (default: "json")
 
-#### list_zones()
+#### listZones()
 
 List all active zones in your Bright Data account.
 
@@ -232,7 +240,7 @@ The SDK includes built-in input validation and retry logic:
 
 ```javascript
 try {
-    const result = client.scrape('https://example.com');
+    const result = await client.scrape('https://example.com');
     console.log(result);
 } catch (error) {
     if (error.name === 'ValidationError') {
@@ -286,7 +294,8 @@ For development installation:
 git clone https://github.com/brightdata/bright-data-sdk-js.git
 cd bright-data-sdk-js
 npm install
-npm test
+npm run test
+npm run dev
 ```
 
 ## License

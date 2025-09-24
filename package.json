@@ -11,7 +11,7 @@
         "sanity": "npm run lint && npm run typecheck",
         "build": "tsc",
         "dev": "tsc --watch",
-        "prepublishOnly": "npm test && npm run lint"
+        "prepublishOnly": "npm test && npm run sanity && npm run build"
     },
     "keywords": [
         "brightdata",
