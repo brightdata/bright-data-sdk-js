@@ -137,3 +137,10 @@ export interface JSONResponse {
 
 export type SingleResponse = string | JSONResponse;
 export type BatchResponse = Array<SingleResponse | BRDError>;
+
+export type ContentFormat = 'json' | 'txt';
+
+export interface SaveOptions {
+    filename?: string;
+    format?: ContentFormat;
+}

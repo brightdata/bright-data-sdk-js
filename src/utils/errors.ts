@@ -33,6 +33,13 @@ export class NetworkError extends BRDError {
     }
 }
 
+export class FSError extends BRDError {
+    constructor(message: string) {
+        super(message);
+        this.name = 'FSError';
+    }
+}
+
 export class APIError extends BRDError {
     statusCode: number | null;
     responseText: string | null;

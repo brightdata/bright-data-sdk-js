@@ -6,7 +6,7 @@ export function parseJSON<T>(data: string): T {
     } catch (e: unknown) {
         const logger = getLogger('utils.json');
         logger.warning(
-            'Failed to parse JSON response, returning as ' + 'string',
+            'failed to parse JSON response, returning as ' + 'string',
             {
                 error: (e as Error).message,
                 data: data.substring(0, 200) + (data.length > 200 ? '...' : ''),
@@ -15,6 +15,10 @@ export function parseJSON<T>(data: string): T {
         throw new Error('Failed to parse JSON response');
     }
 }
+
+export const isStrArray = (maybeArr: unknown): maybeArr is string[] =>
+    Array.isArray(maybeArr) &&
+    maybeArr.every((item) => typeof item === 'string');
 
 export const dropEmptyKeys = (obj: Object) => {
     for (const key in obj) {

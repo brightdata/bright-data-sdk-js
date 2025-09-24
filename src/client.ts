@@ -1,5 +1,3 @@
-import fs from 'fs';
-import path from 'path';
 import { ScrapeAPI } from './api/scrape';
 import { SearchAPI } from './api/search';
 import { ZonesAPI } from './api/zones';
@@ -10,6 +8,7 @@ import {
 } from './utils/constants';
 import { ValidationError } from './utils/errors';
 import { maskKey } from './utils/misc';
+import { writeContent, stringifyResults, getFilename } from './utils/files';
 import {
     ClientOptionsSchema,
     ApiKeySchema,
@@ -18,6 +17,7 @@ import {
     SearchQueryParamSchema,
     URLParamSchema,
     VerboseSchema,
+    SaveOptionsSchema,
     assertSchema,
 } from './schemas';
 import type {
@@ -27,6 +27,7 @@ import type {
     BdClientOptions,
     SingleResponse,
     BatchResponse,
+    SaveOptions,
 } from './types';
 
 const logger = getLogger('client');
@@ -116,15 +117,15 @@ export class bdclient {
      * @example
      * ```javascript
      * // Simple scraping (returns HTML)
-     * const html =  await client.scrape('https://example.com');
+     * const html = await client.scrape('https://example.com');
      *
      * // Get structured JSON data
-     * const data =  await client.scrape('https://example.com', {
+     * const data = await client.scrape('https://example.com', {
      *     format: 'json'
      * });
      *
      * // Advanced options
-     * const result =  await client.scrape('https://example.com', {
+     * const result = await client.scrape('https://example.com', {
      *     method: 'GET',                 // 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
      *     country: 'us',                 // 'us' | 'gb' | 'de' | 'jp' etc.
      *     format: 'raw',                 // 'raw' | 'json'
@@ -134,7 +135,7 @@ export class bdclient {
      * });
      *
      * // E-commerce scraping
-     * const productData =  await client.scrape('https://amazon.com/dp/B123', {
+     * const productData = await client.scrape('https://amazon.com/dp/B123', {
      *     format: 'json',
      *     country: 'us'
      * });
@@ -167,15 +168,15 @@ export class bdclient {
      * @example
      * ```javascript
      * // Simple Google search
-     * const results =  await client.search('pizza restaurants');
+     * const results = await client.search('pizza restaurants');
      *
      * // Structured search results
-     * const data =  await client.search('best laptops 2024', {
+     * const data = await client.search('best laptops 2024', {
      *     format: 'json'
      * });
      *
      * // Advanced search options
-     * const results =  await client.search('machine learning courses', {
+     * const results = await client.search('machine learning courses', {
      *     searchEngine: 'bing',          // 'google' | 'bing' | 'yandex'
      *     country: 'us',                 // 'us' | 'gb' | 'de' | 'jp' etc.
      *     format: 'json',                // 'raw' | 'json'
@@ -185,17 +186,17 @@ export class bdclient {
      * });
      *
      * // Different search engines
-     * const googleResults =  await client.search('nodejs tutorial', {
+     * const googleResults = await client.search('nodejs tutorial', {
      *     searchEngine: 'google',
      *     country: 'us'
      * });
      *
-     * const bingResults =  await client.search('nodejs tutorial', {
+     * const bingResults = await client.search('nodejs tutorial', {
      *     searchEngine: 'bing',
      *     country: 'us'
      * });
      *
-     * const yandexResults =  await client.search('nodejs tutorial', {
+     * const yandexResults = await client.search('nodejs tutorial', {
      *     searchEngine: 'yandex',
      *     country: 'ru'
      * });
@@ -217,191 +218,60 @@ export class bdclient {
             : this.searchAPI.handle(safeQuery, safeOptions);
     }
     /**
-     * Download content to a local file
+     * Write content to a local file
      *
      * Saves scraped data or search results to disk in various formats
      *
-     * @param content Content to save (any data structure)
-     * @param filename Output filename (auto-generated if null)
-     * @param format File format (default: 'json')
-     * @returns Promise resolving to the file path where content was saved
+     * @param content Content to save (SingleResponse or BatchResponse)
+     * @param options Saving options
+     * @param options.filename Output filename (optional, auto-generated if not provided)
+     * @param options.format File format: 'json' | 'txt' (default: 'json')
+     * @returns Promise resolving to the absolute file path where content was saved
      *
      * @example
      * ```javascript
      * // Save scraped data as JSON
-     * const data =  await client.scrape('https://example.com');
-     * const filePath =  await client.downloadContent(data, 'scraped_data.json', 'json');
+     * const data = await client.scrape('https://example.com');
+     * const filePath = await client.saveResults(data, {
+     *     filename: 'scraped_data.json',
+     *     format: 'json',
+     * });
      *
      * // Auto-generate filename
-     * const filePath =  await client.downloadContent(data, null, 'json');
-     * // Creates: brightdata_content_2024-01-15T10-30-45-123Z.json
-     *
-     * // Save as CSV (for array of objects)
-     * const products =  await client.scrape(productUrls, { response_format: 'json' });
-     * const csvPath =  await client.downloadContent(products, 'products.csv', 'csv');
+     * const filePath = await client.saveResults(data);
+     * // Creates: brightdata_content_1758705609651.json
      *
      * // Save as plain text
-     * const html =  await client.scrape('https://example.com');
-     * const txtPath =  await client.downloadContent(html, 'page.txt', 'txt');
+     * const html = await client.scrape('https://example.com');
+     * const txtPath = await client.saveResults(html, {
+     *     filename: 'page.txt',
+     *     format: 'txt',
+     * });
      *
      * // Different formats
-     *  await client.downloadContent(data, 'data.json', 'json');  // JSON format
-     *  await client.downloadContent(data, 'data.csv', 'csv');    // CSV format
-     *  await client.downloadContent(data, 'data.txt', 'txt');    // Text format
+     *  await client.saveResults(data, {
+     *     filename: 'data.json',
+     *     format: 'json', // JSON format
+     * });
+     *  await client.saveResults(data, {
+     *      filename: 'data.txt',
+     *      format: 'txt', // Text format
+     *  });
      * ```
      */
-    downloadContent(
-        content: any,
-        filename: string | null = null,
-        format: 'json' | 'csv' | 'txt' = 'json',
+    async saveResults(
+        content: SingleResponse | BatchResponse,
+        options: SaveOptions = {},
     ) {
-        if (content === null || content === undefined) {
-            throw new ValidationError('Content is required for download');
-        }
-        if (typeof format !== 'string' || format.trim() === '') {
-            throw new ValidationError('Format must be a non-empty string');
-        }
-        const validFormats = ['json', 'csv', 'txt'];
-        if (!validFormats.includes(format.toLowerCase())) {
-            throw new ValidationError(
-                `Format must be one of: ${validFormats.join(', ')}`,
-            );
+        if (!content) {
+            throw new ValidationError('content is required');
         }
 
-        logger.info(`Starting content download in ${format} format`);
-
-        const contentStr =
-            typeof content === 'string' ? content : JSON.stringify(content);
-        const sizeInBytes = Buffer.byteLength(contentStr, 'utf8');
-        const maxSizeBytes = 100 * 1024 * 1024;
-        if (sizeInBytes > maxSizeBytes) {
-            throw new ValidationError(
-                `Content size (${Math.round(
-                    sizeInBytes / 1024 / 1024,
-                )}MB) exceeds maximum allowed size (100MB)`,
-            );
-        }
-
-        if (!filename) {
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            filename = `brightdata_content_${timestamp}.${format}`;
-        } else {
-            filename = filename
-                .replace(/[<>:"/\\|?*]/g, '_')
-                .replace(/\.\./g, '_');
-            const ext = path.extname(filename);
-            if (!ext) {
-                filename += `.${format}`;
-            }
-        }
-        let data_to_write;
-        switch (format.toLowerCase()) {
-            case 'json':
-                data_to_write = JSON.stringify(content, null, 2);
-                break;
-            case 'csv':
-                if (
-                    Array.isArray(content) &&
-                    content.length > 0 &&
-                    typeof content[0] === 'object' &&
-                    content[0] !== null
-                ) {
-                    try {
-                        const headers = Object.keys(content[0]).join(',');
-                        const rows = content.map((obj) => {
-                            if (typeof obj !== 'object' || obj === null) {
-                                throw new ValidationError(
-                                    'All items in array must be objects for CSV format',
-                                );
-                            }
-                            return Object.values(obj)
-                                .map((val) => {
-                                    if (val === null || val === undefined) {
-                                        return '';
-                                    }
-                                    const strVal = String(val);
-                                    if (
-                                        strVal.includes(',') ||
-                                        strVal.includes('"') ||
-                                        strVal.includes('\n')
-                                    ) {
-                                        return `"${strVal.replace(/"/g, '""')}"`;
-                                    }
-                                    return strVal;
-                                })
-                                .join(',');
-                        });
-                        data_to_write = [headers, ...rows].join('\n');
-                    } catch (csvError: any) {
-                        logger.warning(
-                            `CSV conversion failed: ${csvError.message}, falling back to JSON`,
-                        );
-                        data_to_write = JSON.stringify(content, null, 2);
-                    }
-                } else {
-                    logger.warning(
-                        'Content not suitable for CSV format, using JSON instead',
-                    );
-                    data_to_write = JSON.stringify(content, null, 2);
-                }
-                break;
-            case 'txt':
-                if (typeof content == 'string') {
-                    data_to_write = content;
-                } else if (
-                    Array.isArray(content) &&
-                    content.every((item) => typeof item === 'string')
-                ) {
-                    data_to_write = content
-                        .map(
-                            (item, index) =>
-                                `--- RESULT ${index + 1} ---\n\n${item}`,
-                        )
-                        .join('\n\n');
-                } else {
-                    data_to_write = JSON.stringify(content, null, 2);
-                }
-                break;
-            default:
-                data_to_write = JSON.stringify(content, null, 2);
-        }
-
-        try {
-            const dir = path.dirname(filename);
-            if (!fs.existsSync(dir)) {
-                fs.mkdirSync(dir, { recursive: true });
-            }
-
-            fs.writeFileSync(filename, data_to_write, 'utf8');
-
-            if (!fs.existsSync(filename)) {
-                throw new Error('File was not created successfully');
-            }
-
-            const stats = fs.statSync(filename);
-            logger.info(
-                `Content successfully saved to: ${filename} (${stats.size} bytes)`,
-            );
-            return path.resolve(filename);
-        } catch (writeError: any) {
-            logger.error(`Failed to write file: ${writeError.message}`);
-            if (writeError.code === 'EACCES') {
-                throw new Error(
-                    `Permission denied: Cannot write to ${filename}`,
-                );
-            } else if (writeError.code === 'ENOSPC') {
-                throw new Error('Insufficient disk space to write file');
-            } else if (
-                writeError.code === 'EMFILE' ||
-                writeError.code === 'ENFILE'
-            ) {
-                throw new Error('Too many open files, cannot write file');
-            } else {
-                throw new Error(
-                    `Failed to write file ${filename}: ${writeError.message}`,
-                );
-            }
-        }
+        const { format, filename } = assertSchema(SaveOptionsSchema, options);
+        const fname = getFilename(filename, format);
+        logger.info(`saving ${fname}`);
+        const data = stringifyResults(content, format);
+        return await writeContent(data, fname);
     }
     /**
      * List all active zones in your Bright Data account
@@ -413,7 +283,7 @@ export class bdclient {
      * @example
      * ```javascript
      * // List all zones
-     * const zones =  await client.listZones();
+     * const zones = await client.listZones();
      *
      * // Process zone information
      * for (let zone of zones) {
