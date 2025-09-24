@@ -11,9 +11,9 @@ const logger = getLogger('api.zones');
 interface ZoneCreationOpts {
     type?: ZoneInfo['type'];
     domain_whitelist?: string;
-    ips_type?: string;
-    bandwidth?: string;
-    ip_alloc_preset?: string;
+    ips_type?: 'shared' | 'dedicated' | 'selective';
+    bandwidth?: 'bandwidth' | 'unlimited';
+    ip_alloc_preset?: 'shared_block' | 'shared_res_block';
     ips?: number;
     country?: string;
     country_city?: string;
@@ -21,13 +21,14 @@ interface ZoneCreationOpts {
     city?: boolean;
     asn?: boolean;
     vip?: boolean;
-    vips_type?: string;
+    vips_type?: 'shared' | 'domain';
     vips?: number;
     vip_country?: string;
     vip_country_city?: string;
     pool_ip_type?: string;
     ub_premium?: boolean;
     solve_captcha_disable?: boolean;
+    custom_headers?: boolean;
 }
 
 interface ZonesAPIOpts {

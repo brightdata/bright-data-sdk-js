@@ -53,23 +53,22 @@ export class RequestAPI {
 
     async handle(val: string, opts?: RequestOptions): Promise<SingleResponse>;
     async handle(val: string[], opts?: RequestOptions): Promise<BatchResponse>;
-    async handle(input: string | string[], opt: RequestOptions = {}) {
-        const zone = ZoneNameSchema.parse(opt.zone || this.zone);
+    async handle(val: string | string[], opts: RequestOptions = {}) {
+        const zone = ZoneNameSchema.parse(opts.zone || this.zone);
 
         if (this.autoCreateZones) {
             await this.zonesAPI.ensureZone(zone, { type: this.zoneType });
         }
 
-        if (Array.isArray(input)) {
+        if (Array.isArray(val)) {
             this.logger.info(
-                `starting batch operation for ${input.length} items`,
+                `starting batch operation for ${val.length} items`,
             );
-            return this.handleBatch(input, zone, opt);
+            return this.handleBatch(val, zone, opts);
         }
 
-        this.logger.info(`starting operation for ${input}`);
-
-        return this.handleSingle(input, zone, opt);
+        this.logger.info(`starting operation for ${val}`);
+        return this.handleSingle(val, zone, opts);
     }
 
     protected getURL(content: string, opt: RequestOptions): string {
@@ -80,7 +79,7 @@ export class RequestAPI {
         throw new Error('Method not implemented.');
     }
 
-    protected getRequestBody(
+    private getRequestBody(
         content: string,
         zone: string,
         opt: RequestOptions,
