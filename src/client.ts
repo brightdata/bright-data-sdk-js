@@ -77,7 +77,7 @@ export class bdclient {
             : assertSchema(VerboseSchema, BRIGHTDATA_VERBOSE || '0');
 
         setupLogging(opt.logLevel, opt.structuredLogging, isVerbose);
-        logger.info('Initializing Bright Data SDK client');
+        logger.info('initializing Bright Data SDK client');
 
         const apiKey = assertSchema(
             ApiKeySchema,
@@ -147,7 +147,7 @@ export class bdclient {
         const safeOptions = assertSchema(ScrapeOptionsSchema, options);
 
         logger.info(
-            'Starting scrape operation for ' +
+            'starting scrape operation for ' +
                 `${Array.isArray(url) ? url.length : 1} URL(s)`,
         );
 
@@ -208,7 +208,7 @@ export class bdclient {
         const safeOptions = assertSchema(SearchOptionsSchema, options);
 
         logger.info(
-            'Starting search operation for ' +
+            'starting search operation for ' +
                 `${Array.isArray(safeQuery) ? safeQuery.length : 1} query/queries`,
         );
 

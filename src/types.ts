@@ -1,15 +1,17 @@
 import type { BRDError } from './utils/errors';
 
+export type ZoneType =
+    | 'dc'
+    | 'serp'
+    | 'unblocker'
+    | 'res_rotating'
+    | 'res_static'
+    | 'browser_api'
+    | 'mobile';
+
 export interface ZoneInfo {
     name: string;
-    type:
-        | 'dc'
-        | 'serp'
-        | 'unblocker'
-        | 'res_rotating'
-        | 'res_static'
-        | 'browser_api'
-        | 'mobile';
+    type: ZoneType;
     ips: number;
     bandwidth: number;
     created?: string;

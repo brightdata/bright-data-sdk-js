@@ -11,6 +11,7 @@ import type {
     JSONResponse,
     SingleResponse,
     BatchResponse,
+    ZoneType,
 } from '../types';
 import type { ZonesAPI } from './zones';
 
@@ -32,18 +33,21 @@ export interface RequestAPIOptions {
 
 export class RequestAPI {
     protected name: string;
+    protected zoneType: ZoneType;
     private authHeaders: ReturnType<typeof getAuthHeaders>;
     private logger: ReturnType<typeof getLogger>;
     private zone?: string;
     private zonesAPI: ZonesAPI;
+    private autoCreateZones: boolean;
 
     constructor(opts: RequestAPIOptions) {
         this.zone = opts.zone;
         this.authHeaders = getAuthHeaders(opts.apiKey);
         this.zonesAPI = opts.zonesAPI;
+        this.autoCreateZones = opts.autoCreateZones;
     }
 
-    protected init() {
+    init() {
         this.logger = getLogger(`api.${this.name}`);
     }
 
@@ -51,6 +55,10 @@ export class RequestAPI {
     async handle(val: string[], opts?: RequestOptions): Promise<BatchResponse>;
     async handle(input: string | string[], opt: RequestOptions = {}) {
         const zone = ZoneNameSchema.parse(opt.zone || this.zone);
+
+        if (this.autoCreateZones) {
+            await this.zonesAPI.ensureZone(zone, { type: this.zoneType });
+        }
 
         if (Array.isArray(input)) {
             this.logger.info(

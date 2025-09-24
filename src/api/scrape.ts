@@ -5,6 +5,7 @@ export class ScrapeAPI extends RequestAPI {
     constructor(opts: RequestAPIOptions) {
         super(opts);
         this.name = 'scrape';
+        this.zoneType = 'unblocker';
         this.init();
     }
 

@@ -19,6 +19,7 @@ export class SearchAPI extends RequestAPI {
     constructor(opts: RequestAPIOptions) {
         super(opts);
         this.name = 'search';
+        this.zoneType = 'serp';
         this.init();
     }
 

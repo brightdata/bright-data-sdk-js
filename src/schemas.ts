@@ -10,6 +10,7 @@ export const VerboseSchema = z.stringbool().optional();
 
 const SearchQuerySchema = z
     .string()
+    .trim()
     .min(1, 'search query cannot be empty')
     .max(2048, 'search query cannot exceed 2048 characters');
 
@@ -33,6 +34,7 @@ export const URLParamSchema = z.union([URLSchema, URLListSchema]);
 
 export const ZoneNameSchema = z
     .string()
+    .trim()
     .min(3, 'zone name must be at least 3 characters long')
     .max(63, 'zone name must not exceed 63 characters')
     .regex(
