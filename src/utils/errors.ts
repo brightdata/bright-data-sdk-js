@@ -44,7 +44,11 @@ export class APIError extends BRDError {
     statusCode: number | null;
     responseText: string | null;
 
-    constructor(message: string, statusCode = null, responseText = null) {
+    constructor(
+        message: string,
+        statusCode: number | null = null,
+        responseText: string | null = null,
+    ) {
         super(message);
         this.name = 'APIError';
         this.statusCode = statusCode;

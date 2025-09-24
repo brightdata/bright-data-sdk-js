@@ -20,7 +20,7 @@ export const isStrArray = (maybeArr: unknown): maybeArr is string[] =>
     Array.isArray(maybeArr) &&
     maybeArr.every((item) => typeof item === 'string');
 
-export const dropEmptyKeys = (obj: Object) => {
+export const dropEmptyKeys = (obj: Record<string, unknown>) => {
     for (const key in obj) {
         if (obj[key] === undefined || obj[key] === null || obj[key] === '') {
             delete obj[key];

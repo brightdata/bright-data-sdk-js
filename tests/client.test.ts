@@ -15,7 +15,7 @@ vi.spyOn(net, 'request').mockImplementation(() => {
                     }),
                 ),
         },
-    } as unknown as Dispatcher.ResponseData);
+    } as Dispatcher.ResponseData);
 });
 
 describe('bdclient - Simple Usage', () => {

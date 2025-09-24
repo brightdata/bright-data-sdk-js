@@ -39,9 +39,11 @@ interface EnsureZoneOpts {
     type: ZoneInfo['type'];
 }
 
+type ZonesCache = Record<string, ZoneInfo>;
+
 export class ZonesAPI {
     private authHeaders: Record<string, string>;
-    private cachedZones: Record<string, ZoneInfo> | null = null;
+    private cachedZones: ZonesCache | null = null;
 
     constructor(opts: ZonesAPIOpts) {
         this.authHeaders = getAuthHeaders(opts.apiKey);
@@ -102,7 +104,7 @@ export class ZonesAPI {
         let { type: zoneType = 'static' } = opt;
         logger.info(`creating zone: ${name} (type: ${zoneType})`);
 
-        let isSerp = zoneType === 'serp';
+        const isSerp = zoneType === 'serp';
 
         if (isSerp) {
             zoneType = 'unblocker';
@@ -161,7 +163,7 @@ export class ZonesAPI {
     private async getZone(name: string): Promise<ZoneInfo | void> {
         logger.debug(`retrieving zone data: ${name}`);
         await this.ensureCache();
-        return this.cachedZones[name];
+        return this.cachedZones?.[name];
     }
 
     private async ensureCache() {
@@ -171,7 +173,7 @@ export class ZonesAPI {
         this.cachedZones = zones.reduce((acc, zone) => {
             acc[zone.name] = zone;
             return acc;
-        }, {});
+        }, {} as ZonesCache);
     }
 
     private invalidateCache() {

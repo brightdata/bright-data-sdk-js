@@ -48,19 +48,17 @@ export const ZoneNameSchema = z
         message: 'zone name cannot end with an underscore',
     });
 
-export const ClientOptionsSchema = z
-    .object({
-        apiKey: ApiKeySchema.optional(),
-        webUnlockerZone: ZoneNameSchema.optional(),
-        serpZone: ZoneNameSchema.optional(),
-        logLevel: z
-            .enum(['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])
-            .optional(),
-        verbose: z.boolean().optional(),
-        structuredLogging: z.boolean().default(true),
-        autoCreateZones: z.boolean().default(true),
-    })
-    .optional();
+export const ClientOptionsSchema = z.object({
+    apiKey: ApiKeySchema.optional(),
+    webUnlockerZone: ZoneNameSchema.optional(),
+    serpZone: ZoneNameSchema.optional(),
+    logLevel: z
+        .enum(['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])
+        .optional(),
+    verbose: z.boolean().optional(),
+    structuredLogging: z.boolean().default(true),
+    autoCreateZones: z.boolean().default(true),
+});
 
 const RequestOptionsBaseSchema = z.object({
     zone: ZoneNameSchema.optional(),

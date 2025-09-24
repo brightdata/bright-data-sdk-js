@@ -64,7 +64,7 @@ export class bdclient {
     private searchAPI: SearchAPI;
     private zonesAPI: ZonesAPI;
 
-    constructor(options: BdClientOptions) {
+    constructor(options?: BdClientOptions) {
         const opt = assertSchema(ClientOptionsSchema, options || {});
         const {
             BRIGHTDATA_API_KEY,

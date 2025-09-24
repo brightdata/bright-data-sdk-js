@@ -8,7 +8,9 @@
         "module": "NodeNext",
         "outDir": "dist",
         "declaration": true,
-        "lib": ["es2022"]
+        "lib": ["es2022"],
+        "strict": true,
+        "noImplicitAny": true
     },
     "include": ["src/**/*.ts"],
     "exclude": ["node_modules"]

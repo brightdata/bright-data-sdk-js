@@ -27,15 +27,15 @@ interface RequestQueryBody {
 export interface RequestAPIOptions {
     apiKey: string;
     zonesAPI: ZonesAPI;
-    autoCreateZones?: boolean;
+    autoCreateZones: boolean;
     zone?: string;
 }
 
 export class RequestAPI {
-    protected name: string;
-    protected zoneType: ZoneType;
+    protected name!: string;
+    protected zoneType!: ZoneType;
+    private logger!: ReturnType<typeof getLogger>;
     private authHeaders: ReturnType<typeof getAuthHeaders>;
-    private logger: ReturnType<typeof getLogger>;
     private zone?: string;
     private zonesAPI: ZonesAPI;
     private autoCreateZones: boolean;
@@ -71,11 +71,11 @@ export class RequestAPI {
         return this.handleSingle(val, zone, opts);
     }
 
-    protected getURL(content: string, opt: RequestOptions): string {
+    protected getURL(_content: string, _opt: RequestOptions): string {
         throw new Error('Method not implemented.');
     }
 
-    protected getMethod(opt: RequestOptions): RequestOptions['method'] {
+    protected getMethod(_opt: RequestOptions): RequestOptions['method'] {
         throw new Error('Method not implemented.');
     }
 
@@ -96,7 +96,7 @@ export class RequestAPI {
             res.data_format = opt.dataFormat;
         }
 
-        dropEmptyKeys(res);
+        dropEmptyKeys(res as Record<keyof RequestQueryBody, unknown>);
 
         return res;
     }
@@ -123,9 +123,9 @@ export class RequestAPI {
                 return parseJSON<JSONResponse>(responseTxt);
             }
             return responseTxt;
-        } catch (e: any) {
+        } catch (e: unknown) {
             if (e instanceof BRDError) throw e;
-            throw new APIError(`operation failed: ${e.message}`);
+            throw new APIError(`operation failed: ${(e as Error).message}`);
         }
     }
 

@@ -32,7 +32,7 @@ export const stringifyResults = (
 };
 
 export const getFilename = (
-    filename: string | null,
+    filename: string | void,
     format: ContentFormat,
 ): string => {
     if (filename) {
