@@ -1,7 +1,7 @@
 import { ScrapeAPI } from './api/scrape';
 import { SearchAPI } from './api/search';
 import { ZonesAPI } from './api/zones';
-import { setupLogging, getLogger } from './utils/logger';
+import { setup as setupLogger, getLogger } from './utils/logger';
 import {
     DEFAULT_WEB_UNLOCKER_ZONE,
     DEFAULT_SERP_ZONE,
@@ -35,12 +35,8 @@ import type {
     AnyResponse,
 } from './types';
 
-const logger = getLogger('client');
-
 /**
  * Create a new bdclient instance
- *
- * @param opt Configuration options for the client
  *
  * @example
  * ```javascript
@@ -68,9 +64,14 @@ export class bdclient {
     private scrapeAPI: ScrapeAPI;
     private searchAPI: SearchAPI;
     private zonesAPI: ZonesAPI;
+    private logger!: ReturnType<typeof getLogger>;
 
     constructor(options?: BdClientOptions) {
-        const opt = assertSchema(ClientOptionsSchema, options || {});
+        const opt = assertSchema(
+            ClientOptionsSchema,
+            options || {},
+            'bdclient.options',
+        );
         const {
             BRIGHTDATA_API_KEY,
             BRIGHTDATA_VERBOSE,
@@ -80,18 +81,24 @@ export class bdclient {
 
         const isVerbose = opt.verbose
             ? opt.verbose
-            : assertSchema(VerboseSchema, BRIGHTDATA_VERBOSE || '0');
+            : assertSchema(
+                  VerboseSchema,
+                  BRIGHTDATA_VERBOSE || '0',
+                  'bdclient.options.verbose',
+              );
 
-        setupLogging(opt.logLevel, opt.structuredLogging, isVerbose);
-        logger.info('initializing Bright Data SDK client');
+        this.logger = getLogger('client');
+        setupLogger(opt.logLevel, opt.structuredLogging, isVerbose);
+        this.logger.info('initializing Bright Data SDK client');
 
         const apiKey = assertSchema(
             ApiKeySchema,
             opt.apiKey || BRIGHTDATA_API_KEY,
+            'bdclient.options.apiKey',
         );
 
-        logger.info(`API key validated successfully: ${maskKey(apiKey)}`);
-        logger.info('HTTP client configured with secure headers');
+        this.logger.info(`API key validated successfully: ${maskKey(apiKey)}`);
+        this.logger.info('HTTP client configured with secure headers');
 
         this.zonesAPI = new ZonesAPI({ apiKey });
         this.scrapeAPI = new ScrapeAPI({
@@ -154,10 +161,15 @@ export class bdclient {
         url: string | string[],
         options: ScrapeOptions | ScrapeJSONOptions = {},
     ): Promise<AnyResponse> {
-        const safeUrl = assertSchema(URLParamSchema, url);
-        const safeOptions = assertSchema(ScrapeOptionsSchema, options);
+        const label = 'bdclient.scrape.';
+        const safeUrl = assertSchema(URLParamSchema, url, `${label}url`);
+        const safeOptions = assertSchema(
+            ScrapeOptionsSchema,
+            options,
+            `${label}options`,
+        );
 
-        logger.info(
+        this.logger.info(
             'starting scrape operation for ' +
                 `${Array.isArray(url) ? url.length : 1} URL(s)`,
         );
@@ -220,10 +232,19 @@ export class bdclient {
         query: string | string[],
         options?: SearchOptions | SearchJSONOptions,
     ): Promise<AnyResponse> {
-        const safeQuery = assertSchema(SearchQueryParamSchema, query);
-        const safeOptions = assertSchema(SearchOptionsSchema, options || {});
+        const label = 'bdclient.search.';
+        const safeQuery = assertSchema(
+            SearchQueryParamSchema,
+            query,
+            `${label}url`,
+        );
+        const safeOptions = assertSchema(
+            SearchOptionsSchema,
+            options || {},
+            `${label}url`,
+        );
 
-        logger.info(
+        this.logger.info(
             'starting search operation for ' +
                 `${Array.isArray(safeQuery) ? safeQuery.length : 1} query/queries`,
         );
@@ -275,7 +296,7 @@ export class bdclient {
 
         const { format, filename } = assertSchema(SaveOptionsSchema, options);
         const fname = getFilename(filename, format);
-        logger.info(`saving ${fname}`);
+        this.logger.info(`saving ${fname}`);
         const data = stringifyResults(content, format);
         return await writeContent(data, fname);
     }

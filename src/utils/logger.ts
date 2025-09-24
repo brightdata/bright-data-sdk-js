@@ -12,7 +12,7 @@ const logLevels: Record<LOG_LEVEL, number> = {
     CRITICAL: 4,
 };
 
-export function setupLogging(
+export function setup(
     logLevel: LOG_LEVEL = 'INFO',
     structuredLogging = true,
     verbose = false,
@@ -38,37 +38,42 @@ export function getLogger(name: string) {
 }
 
 function log(level: LOG_LEVEL, name: string, message: string, extra = {}) {
-    const current_level_value = logLevels[currentLogLevel] || logLevels.INFO;
-    const message_level_value = logLevels[level] || logLevels.INFO;
-    if (!isVerbose && message_level_value < logLevels.WARNING) return;
-    if (message_level_value < current_level_value) return;
-    const timestamp = new Date().toISOString();
+    const curLevelVal = logLevels[currentLogLevel] || logLevels.INFO;
+    const levelVal = logLevels[level] || logLevels.INFO;
+
+    if (!isVerbose && levelVal < logLevels.WARNING) return;
+    if (levelVal < curLevelVal) return;
+
     if (isStructuredLogging) {
-        const log_entry = {
-            timestamp,
-            level,
-            logger: name,
-            message,
-            ...extra,
-        };
-        console.log(JSON.stringify(log_entry));
-    } else {
-        const formatted_message = `${timestamp} [${level}] ${name}: ${message}`;
-        switch (level) {
-            case 'DEBUG':
-            case 'INFO':
-                console.log(formatted_message);
-                break;
-            case 'WARNING':
-                console.warn(formatted_message);
-                break;
-            case 'ERROR':
-            case 'CRITICAL':
-                console.error(formatted_message);
-                break;
-            default:
-                console.log(formatted_message);
-        }
+        console.log(
+            JSON.stringify({
+                timestamp: Date.now(),
+                level,
+                logger: name,
+                message,
+                ...extra,
+            }),
+        );
+        return;
+    }
+
+    const timestamp = new Date().toISOString();
+    const fmted = `${timestamp} [${level}] ${name}: ${message}`;
+
+    switch (level) {
+        case 'DEBUG':
+        case 'INFO':
+            console.log(fmted);
+            break;
+        case 'WARNING':
+            console.warn(fmted);
+            break;
+        case 'ERROR':
+        case 'CRITICAL':
+            console.error(fmted);
+            break;
+        default:
+            console.log(fmted);
     }
 }
 
