@@ -14,7 +14,8 @@
     },
     "scripts": {
         "test": "vitest",
-        "lint": "eslint src/**/*.ts",
+        "lint": "eslint src/**/*.ts tests/**/*.ts",
+        "format": "prettier . --write",
         "typecheck": "tsc --noEmit",
         "sanity": "npm run lint && npm run typecheck",
         "build": "tsc --build tsconfig.json && tsc --build tsconfig.cjs.json",
@@ -63,10 +64,9 @@
         "vitest": "^3.2.4"
     },
     "files": [
-        "src/",
-        "examples/",
+        "dist/",
         "README.md",
-        "LICENSE",
-        "CHANGELOG.md"
+        "package.json",
+        "LICENSE"
     ]
 }
