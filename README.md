@@ -15,14 +15,8 @@ For a quick start, you can try running our example files in this repository.
 - **Robust Error Handling**: Comprehensive error handling with retry logic
 - **Zone Management**: Automatic zone creation and management
 - **Multiple Output Formats**: HTML, JSON, and Markdown
-
-## Installation
-
-Install the package via NPM:
-
-```bash
-npm install @brightdata/sdk
-```
+- **Dual build**: Both ESM and CommonJS supported
+- **TypeScript**: Fully typed for different combinations of input and output data
 
 ## Quick start
 
@@ -32,17 +26,32 @@ npm install @brightdata/sdk
 1. [Create your API key](https://docs.brightdata.com/api-reference/authentication#how-do-i-generate-a-new-api-key%3F)
 1. Copy your API key
 
+### Install
+
+Install the package via NPM:
+
+```bash
+npm install @brightdata/sdk
+```
+
 ### Launch your first request
 
-Copy the following code to run a simple SERP scraper:
+Put the following code to `scrape.mjs`:
 
 ```javascript
-const { bdclient } = require('@brightdata/sdk');
+import { bdclient } from '@brightdata/sdk';
 
-const apiKey = '[your_api_key_here]'; // can also be defined as BRIGHTDATA_API_KEY env variable
-const client = new bdclient({ apiKey });
+const client = new bdclient({
+    apiKey: '[your_api_key_here]'; // can also be defined as BRIGHTDATA_API_KEY env variable
+});
 const result = await client.search('pizza restaurants');
 console.log(result);
+```
+
+start a simple SERP scraper:
+
+```bash
+node scrape.mjs
 ```
 
 ## Usage
@@ -52,8 +61,9 @@ console.log(result);
 ```javascript
 const { bdclient } = require('@brightdata/sdk');
 
-const apiKey = '[your_api_key_here]'; // can also be defined as BRIGHTDATA_API_KEY env variable
-const client = new bdclient({ apiKey });
+const client = new bdclient({
+    apiKey: '[your_api_key_here]'; // can also be defined as BRIGHTDATA_API_KEY env variable
+});
 ```
 
 Or you can use a custom zone name:
@@ -61,47 +71,47 @@ Or you can use a custom zone name:
 ```javascript
 const client = new bdclient({
     apiKey: '[your_api_key_here]',
-    autoCreateZones: false, // Otherwise it creates zones automatically
-    webUnlockerZone: 'custom_zone', // Custom zone name for web scraping
-    serpZone: 'custom_serp_zone', // Custom zone name for search requests
+    autoCreateZones: false, // otherwise it creates zones automatically
+    webUnlockerZone: 'custom_zone', // custom zone name for web scraping
+    serpZone: 'custom_serp_zone', // custom zone name for search requests
 });
 ```
 
 ### 2. Scrape websites
 
 ```javascript
-// Single URL - Returns markdown string by default
+// single URL - returns markdown string by default
 const result = await client.scrape('https://example.com');
-console.log(result); // Output: web page html content
+console.log(result); // output: web page html content
 
-// Multiple URLs (parallel processing)
+// multiple URLs (parallel processing)
 const urls = [
     'https://example1.com',
     'https://example2.com',
     'https://example3.com',
 ];
 const results = await client.scrape(urls);
-console.log(results); // Returns array of html strings
+console.log(results); // returns array of html strings
 
-// Different data formats available
+// different data formats available
 const htmlResult = await client.scrape('https://example.com', {
-    dataFormat: 'html', // Returns raw HTML (default: 'html')
+    dataFormat: 'html', // returns raw HTML (default: 'html')
 });
 
 const screenshotResult = await client.scrape('https://example.com', {
-    dataFormat: 'screenshot', // Returns base64 screenshot image
+    dataFormat: 'screenshot', // returns base64 screenshot image
 });
 
-// Different response formats
+// different response formats
 const jsonResult = await client.scrape('https://example.com', {
-    format: 'json', // Returns parsed JSON object (default: 'raw' string)
+    format: 'json', // returns parsed JSON object (default: 'raw' string)
 });
 
-// Combined custom options
+// combined custom options
 const result = await client.scrape('https://example.com', {
     format: 'raw', // 'raw' (default) or 'json'
     dataFormat: 'markdown', // 'markdown' (default), 'raw', 'screenshot', etc.
-    country: 'gb', // Two-letter country code
+    country: 'gb', // two-letter country code
     method: 'GET', // HTTP method (default: 'GET')
 });
 ```
@@ -109,22 +119,22 @@ const result = await client.scrape('https://example.com', {
 ### 3. Search Engine Results
 
 ```javascript
-// Single search query
+// single search query
 const result = await client.search('pizza restaurants');
 console.log(result);
 
-// Multiple queries (parallel processing)
+// multiple queries (parallel processing)
 const queries = ['pizza', 'restaurants', 'delivery'];
 const results = await client.search(queries);
 console.log(results);
 
-// Different search engines
+// different search engines
 const result = await client.search('pizza', {
     searchEngine: 'google', // can also be 'yandex' or 'bing'
 });
 console.log(result);
 
-// Custom options
+// custom options
 const results = await client.search(['pizza', 'sushi'], {
     country: 'gb',
     format: 'raw',
@@ -135,7 +145,7 @@ console.log(results);
 ### 4. Saving Results
 
 ```javascript
-// Download scraped content
+// download scraped content
 const data = await client.scrape('https://example.com');
 const filePath = await client.saveResults(data, {
     filename: 'results.json',
@@ -248,14 +258,6 @@ try {
 }
 ```
 
-## Production Features
-
-- **Retry Logic**: Automatic retries with exponential backoff for network failures
-- **Input Validation**: Validates URLs, zone names, and parameters
-- **Connection Pooling**: Efficient HTTP connection management
-- **Logging**: Comprehensive logging for debugging and monitoring
-- **Zone Auto-Creation**: Automatically creates required zones if they don't exist
-
 ## Configuration Constants
 
 | Constant               | Default | Description                    |
@@ -264,18 +266,6 @@ try {
 | `DEFAULT_TIMEOUT`      | `30000` | Request timeout (milliseconds) |
 | `MAX_RETRIES`          | `3`     | Retry attempts on failure      |
 | `RETRY_BACKOFF_FACTOR` | `1.5`   | Exponential backoff multiplier |
-
-## TypeScript Support
-
-The SDK includes TypeScript definitions. Import with TypeScript:
-
-```typescript
-import { bdclient } from '@brightdata/sdk';
-
-const client = new bdclient({
-    apiKey: '[your_api_key_here]',
-});
-```
 
 ## Development
 
