@@ -1,14 +1,13 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 
 let version;
 try {
-    const packagePath = path.join(__dirname, '../../package.json');
+    const packagePath = path.join(__dirname, '../../../package.json');
     const packageData = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
     version = packageData.version;
 } catch {
-    // Fallback version if package.json can't be read
-    version = '0.0.0';
+    version = 'dev';
 }
 
 // Version and User-Agent

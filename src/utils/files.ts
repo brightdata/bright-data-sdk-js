@@ -1,6 +1,6 @@
-import fs from 'fs/promises';
-import type { Stats } from 'fs';
-import path from 'path';
+import fs from 'node:fs/promises';
+import type { Stats } from 'node:fs';
+import path from 'node:path';
 import { getLogger } from './logger';
 import { BRDError, FSError } from './errors';
 import { isStrArray } from './misc';
