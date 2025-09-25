@@ -1,16 +1,19 @@
 {
     "compilerOptions": {
         "esModuleInterop": true,
-        "skipLibCheck": true,
-        "target": "es2022",
+        "target": "es2023",
         "moduleDetection": "force",
         "isolatedModules": true,
-        "module": "NodeNext",
-        "outDir": "dist",
+        "module": "nodenext",
+        "outDir": "dist/esm",
         "declaration": true,
-        "lib": ["es2022"],
+        "lib": ["ES2023"],
         "strict": true,
-        "noImplicitAny": true
+        "noImplicitAny": true,
+        "forceConsistentCasingInFileNames": true,
+        "noUncheckedIndexedAccess": true,
+        "noImplicitOverride": true,
+        "noFallthroughCasesInSwitch": true
     },
     "include": ["src/**/*.ts"],
     "exclude": ["node_modules"]

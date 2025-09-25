@@ -23,11 +23,11 @@ export class SearchAPI extends RequestAPI {
         this.init();
     }
 
-    protected getURL(content: string, opt: SearchOptions) {
+    protected override getURL(content: string, opt: SearchOptions) {
         return toSERPrl(opt.searchEngine, content);
     }
 
-    protected getMethod() {
+    protected override getMethod() {
         return 'GET' as const;
     }
 }

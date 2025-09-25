@@ -45,7 +45,7 @@ export class RequestAPI {
     private autoCreateZones: boolean;
 
     constructor(opts: RequestAPIOptions) {
-        this.zone = opts.zone;
+        if (opts.zone) this.zone = opts.zone;
         this.authHeaders = getAuthHeaders(opts.apiKey);
         this.zonesAPI = opts.zonesAPI;
         this.autoCreateZones = opts.autoCreateZones;

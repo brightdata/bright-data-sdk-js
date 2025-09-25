@@ -2,15 +2,23 @@
     "name": "@brightdata/sdk",
     "version": "0.1.0",
     "description": "JavaScript SDK for Bright Data Web Scraping and SERP APIs",
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
+    "main": "dist/cjs/index.js",
+    "module": "dist/esm/index.js",
+    "types": "dist/esm/index.d.ts",
+    "exports": {
+        ".": {
+            "import": "./dist/esm/index.js",
+            "require": "./dist/cjs/index.js",
+            "types": "./dist/esm/index.d.ts"
+        }
+    },
     "scripts": {
         "test": "vitest",
         "lint": "eslint src/**/*.ts",
         "typecheck": "tsc --noEmit",
         "sanity": "npm run lint && npm run typecheck",
-        "build": "tsc",
-        "dev": "tsc --watch",
+        "build": "tsc --build tsconfig.json && tsc --build tsconfig.cjs.json",
+        "dev": "tsc --build --watch tsconfig.json",
         "prepublishOnly": "npm test && npm run sanity && npm run build"
     },
     "keywords": [

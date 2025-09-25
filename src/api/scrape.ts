@@ -9,11 +9,11 @@ export class ScrapeAPI extends RequestAPI {
         this.init();
     }
 
-    protected getURL(content: string) {
+    protected override getURL(content: string) {
         return content;
     }
 
-    protected getMethod(opt: ScrapeOptions) {
+    protected override getMethod(opt: ScrapeOptions) {
         return opt.method;
     }
 }
