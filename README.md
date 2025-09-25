@@ -18,59 +18,56 @@ For a quick start, you can try running our example files in this repository.
 
 ## Installation
 
-Install the package from NPM:
+Install the package via NPM:
 
 ```bash
 npm install @brightdata/sdk
 ```
 
-Or using yarn:
+## Quick start
 
-```bash
-yarn add @brightdata/sdk
-```
+### Get your API key
 
-## Launch your first request
+1. Sign up at [Bright Data Website](https://brightdata.com), and navigate to your dashboard
+1. [Create your API key](https://docs.brightdata.com/api-reference/authentication#how-do-i-generate-a-new-api-key%3F)
+1. Copy your API key
 
-Make sure you have a [Bright Data](https://brightdata.com/cp/setting/) account with an API key, and SDK package downloaded.
+### Launch your first request
 
-In your IDE, paste the following code for a simple scraper:
+Copy the following code to run a simple SERP scraper:
 
 ```javascript
-const { bdclient } = require('brightdata');
+const { bdclient } = require('@brightdata/sdk');
 
-const client = new bdclient({
-    apiKey: 'your_api_key_here', // can also be defined as BRIGHTDATA_API_KEY env variable
-});
-
+const apiKey = '[your_api_key_here]'; // can also be defined as BRIGHTDATA_API_KEY env variable
+const client = new bdclient({ apiKey });
 const result = await client.search('pizza restaurants');
 console.log(result);
 ```
 
-## Using functions
+## Usage
 
-### 1. Initialize the Client
+### 1. Initialize the client
 
 ```javascript
-const { bdclient } = require('brightdata');
+const { bdclient } = require('@brightdata/sdk');
 
-const client = new bdclient({
-    apiKey: 'your_api_key_here', // can also be defined as BRIGHTDATA_API_KEY env variable
-});
+const apiKey = '[your_api_key_here]'; // can also be defined as BRIGHTDATA_API_KEY env variable
+const client = new bdclient({ apiKey });
 ```
 
 Or you can use a custom zone name:
 
 ```javascript
 const client = new bdclient({
-    apiKey: 'your_api_key_here',
+    apiKey: '[your_api_key_here]',
     autoCreateZones: false, // Otherwise it creates zones automatically
     webUnlockerZone: 'custom_zone', // Custom zone name for web scraping
     serpZone: 'custom_serp_zone', // Custom zone name for search requests
 });
 ```
 
-### 2. Scrape Websites
+### 2. Scrape websites
 
 ```javascript
 // Single URL - Returns markdown string by default
@@ -273,18 +270,12 @@ try {
 The SDK includes TypeScript definitions. Import with TypeScript:
 
 ```typescript
-import { bdclient } from 'brightdata';
+import { bdclient } from '@brightdata/sdk';
 
 const client = new bdclient({
-    apiKey: 'your_api_key_here',
+    apiKey: '[your_api_key_here]',
 });
 ```
-
-## Getting Your API Key
-
-1. Sign up at [brightdata.com](https://brightdata.com/), and navigate to your dashboard
-2. Create or access your API credentials
-3. Copy your API key and use it in your code or .env file
 
 ## Development
 
@@ -294,14 +285,13 @@ For development installation:
 git clone https://github.com/brightdata/bright-data-sdk-js.git
 cd bright-data-sdk-js
 npm install
-npm run test
 npm run dev
 ```
-
-## License
-
-This project is licensed under the MIT License.
 
 ## Support
 
 For any issues, contact [Bright Data support](https://brightdata.com/contact), or open an issue in this repository.
+
+## License
+
+This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).

@@ -1,9 +1,8 @@
 require('dotenv').config();
 const { bdclient } = require('@brightdata/sdk');
 
-const client = new bdclient(); // Place your API key in the bdclient or .env file
+// put your API key in the apiKey option or BRIGHTDATA_API_KEY env variable
+const client = new bdclient();
+const result = await client.search(['Burger', 'pizza']);
 
-const queries = ['Burger', 'pizza'];
-
-const result = await client.search(queries);
 console.log(result);
