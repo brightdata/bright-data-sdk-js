@@ -1,10 +1,10 @@
-import { getLogger } from '../utils/logger.js';
-import { API_ENDPOINT } from '../utils/constants.js';
-import { getAuthHeaders } from '../utils/auth.js';
-import { parseJSON } from '../utils/misc.js';
-import { request, assertResponse } from '../utils/net.js';
-import { ZoneError, APIError, BRDError } from '../utils/errors.js';
-import type { ZoneInfo, ZoneInfoResponse } from '../types.js';
+import { getLogger } from '../utils/logger';
+import { API_ENDPOINT } from '../utils/constants';
+import { getAuthHeaders } from '../utils/auth';
+import { parseJSON } from '../utils/misc';
+import { request, assertResponse } from '../utils/net';
+import { ZoneError, APIError, BRDError } from '../utils/errors';
+import type { ZoneInfo, ZoneInfoResponse } from '../types';
 
 const logger = getLogger('api.zones');
 

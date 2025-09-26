@@ -1,19 +1,4 @@
-import fs from 'node:fs';
-import path from 'node:path';
-
-let version: string;
-try {
-    const packagePath = path.join(__dirname, '../../../package.json');
-    const packageData = JSON.parse(fs.readFileSync(packagePath, 'utf8')) as {
-        version: string;
-    };
-    version = packageData.version;
-} catch {
-    version = 'dev';
-}
-
-// Version and User-Agent
-export const PACKAGE_VERSION = version;
+export const PACKAGE_VERSION = process.env.BRD_PACKAGE_VERSION || 'dev';
 export const USER_AGENT = `brightdata-sdk-js/${PACKAGE_VERSION}`;
 
 // API Configuration

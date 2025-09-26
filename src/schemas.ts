@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { ValidationError } from './utils/errors.js';
-import { DEFAULT_CONCURRENCY } from './utils/constants.js';
+import { ValidationError } from './utils/errors';
+import { DEFAULT_CONCURRENCY } from './utils/constants';
 
 export const ApiKeySchema = z
     .string()

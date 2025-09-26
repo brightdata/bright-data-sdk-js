@@ -1,4 +1,4 @@
-type LOG_LEVEL = 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL';
+import type { LOG_LEVEL } from '../types';
 
 let currentLogLevel: LOG_LEVEL = 'INFO';
 let isStructuredLogging = true;

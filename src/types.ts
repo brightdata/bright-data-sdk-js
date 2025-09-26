@@ -1,4 +1,4 @@
-import type { BRDError } from './utils/errors.js';
+import type { BRDError } from './utils/errors';
 
 export type ZoneType =
     | 'dc'
@@ -99,6 +99,8 @@ export interface SearchOptions extends RequestOptions {
 
 export type SearchJSONOptions = SearchOptions & RequestJSONOptions;
 
+export type LOG_LEVEL = 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL';
+
 export interface BdClientOptions {
     /**
      * Your Bright Data API key (can also be set via BRIGHTDATA_API_KEY env var)
@@ -124,7 +126,7 @@ export interface BdClientOptions {
      * Log level (default: 'INFO')
      * Available values: 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL'
      */
-    logLevel?: 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL';
+    logLevel?: LOG_LEVEL;
     /**
      * Use structured JSON logging (default: true)
      * @example true (JSON format) | false (plain text)

@@ -1,14 +1,14 @@
-import { ScrapeAPI } from './api/scrape.js';
-import { SearchAPI } from './api/search.js';
-import { ZonesAPI } from './api/zones.js';
-import { setup as setupLogger, getLogger } from './utils/logger.js';
+import { ScrapeAPI } from './api/scrape';
+import { SearchAPI } from './api/search';
+import { ZonesAPI } from './api/zones';
+import { setup as setupLogger, getLogger } from './utils/logger';
 import {
     DEFAULT_WEB_UNLOCKER_ZONE,
     DEFAULT_SERP_ZONE,
-} from './utils/constants.js';
-import { ValidationError } from './utils/errors.js';
-import { maskKey } from './utils/misc.js';
-import { writeContent, stringifyResults, getFilename } from './utils/files.js';
+} from './utils/constants';
+import { ValidationError } from './utils/errors';
+import { maskKey } from './utils/misc';
+import { writeContent, stringifyResults, getFilename } from './utils/files';
 import {
     ClientOptionsSchema,
     ApiKeySchema,
@@ -19,7 +19,7 @@ import {
     VerboseSchema,
     SaveOptionsSchema,
     assertSchema,
-} from './schemas.js';
+} from './schemas';
 import type {
     ZoneInfo,
     BdClientOptions,
@@ -33,7 +33,7 @@ import type {
     SingleRawResponse,
     BatchRawResponse,
     AnyResponse,
-} from './types.js';
+} from './types';
 
 /**
  * Create a new bdclient instance

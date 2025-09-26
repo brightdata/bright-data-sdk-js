@@ -1,7 +1,7 @@
 import type { Dispatcher } from 'undici';
 import { describe, expect, test, vi } from 'vitest';
-import { bdclient, ValidationError } from '../src/index.js';
-import * as net from '../src/utils/net.js';
+import { bdclient, ValidationError } from '../src/index';
+import * as net from '../src/utils/net';
 
 vi.spyOn(net, 'request').mockImplementation(() => {
     return Promise.resolve({

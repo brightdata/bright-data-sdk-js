@@ -1,10 +1,10 @@
 import fs from 'node:fs/promises';
 import type { Stats } from 'node:fs';
 import path from 'node:path';
-import { getLogger } from './logger.js';
-import { BRDError, FSError } from './errors.js';
-import { isStrArray } from './misc.js';
-import type { SingleResponse, BatchResponse, ContentFormat } from '../types.js';
+import { getLogger } from './logger';
+import { BRDError, FSError } from './errors';
+import { isStrArray } from './misc';
+import type { SingleResponse, BatchResponse, ContentFormat } from '../types';
 
 const logger = getLogger('utils.files');
 
