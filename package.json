@@ -5,21 +5,27 @@
     "main": "dist/cjs/index.js",
     "module": "dist/esm/index.js",
     "types": "dist/esm/index.d.ts",
+    "type": "module",
     "exports": {
         ".": {
+            "types": "./dist/esm/index.d.ts",
             "import": "./dist/esm/index.js",
-            "require": "./dist/cjs/index.js",
-            "types": "./dist/esm/index.d.ts"
+            "require": "./dist/cjs/index.js"
         }
     },
     "scripts": {
-        "test": "vitest",
-        "lint": "eslint src/**/*.ts tests/**/*.ts",
+        "test": "vitest run",
+        "test:dev": "vitest watch",
+        "lint": "eslint src/**/*.ts",
         "format": "prettier . --write",
-        "typecheck": "tsc --noEmit",
+        "typecheck": "tsc --noEmit --project tsconfig.json",
         "sanity": "npm run lint && npm run typecheck",
-        "build": "tsc --build tsconfig.json && tsc --build tsconfig.cjs.json",
-        "dev": "tsc --build --watch tsconfig.json",
+        "build": "npm run build:clean && npm run build:esm && npm run build:cjs",
+        "build:esm": "tsc --project tsconfig.json",
+        "build:cjs": "tsc --project tsconfig.cjs.json && npm run build:cjs:pkg",
+        "build:cjs:pkg": "echo '{\"type\": \"commonjs\"}' > ./dist/cjs/package.json",
+        "build:clean": "rm -rf ./dist",
+        "build:dev": "tsc --build --watch tsconfig.json",
         "prepublishOnly": "npm test && npm run sanity && npm run build"
     },
     "keywords": [

@@ -1,8 +1,8 @@
-import { getLogger } from './logger';
+import { getLogger } from './logger.js';
 
 export function parseJSON<T>(data: string): T {
     try {
-        return JSON.parse(data);
+        return JSON.parse(data) as T;
     } catch (e: unknown) {
         const logger = getLogger('utils.json');
         logger.warning(

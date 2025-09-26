@@ -9,8 +9,8 @@ import {
     MAX_RETRIES,
     RETRY_BACKOFF_FACTOR,
     RETRY_STATUSES,
-} from './constants';
-import { APIError, AuthenticationError, ValidationError } from './errors';
+} from './constants.js';
+import { APIError, AuthenticationError, ValidationError } from './errors.js';
 
 const { dns, retry } = interceptors;
 

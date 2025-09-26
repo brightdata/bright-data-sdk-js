@@ -1,5 +1,5 @@
-import type { SearchOptions, SearchEngine } from '../types';
-import { RequestAPI, type RequestAPIOptions } from './request';
+import type { SearchOptions, SearchEngine } from '../types.js';
+import { RequestAPI, type RequestAPIOptions } from './request.js';
 
 const toSERPrl = (searchEngine: SearchEngine = 'google', query: string) => {
     const encodedQuery = encodeURIComponent(query.trim());

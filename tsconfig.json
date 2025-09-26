@@ -1,13 +1,14 @@
 {
     "compilerOptions": {
         "esModuleInterop": true,
-        "target": "es2023",
+        "target": "esnext",
+        "module": "nodenext",
+        "lib": ["esnext"],
+        "moduleResolution": "nodenext",
         "moduleDetection": "force",
         "isolatedModules": true,
-        "module": "nodenext",
         "outDir": "dist/esm",
         "declaration": true,
-        "lib": ["ES2023"],
         "strict": true,
         "noImplicitAny": true,
         "forceConsistentCasingInFileNames": true,

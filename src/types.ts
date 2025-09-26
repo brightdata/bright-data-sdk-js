@@ -1,4 +1,4 @@
-import type { BRDError } from './utils/errors';
+import type { BRDError } from './utils/errors.js';
 
 export type ZoneType =
     | 'dc'

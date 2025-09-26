@@ -1,10 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-let version;
+let version: string;
 try {
     const packagePath = path.join(__dirname, '../../../package.json');
-    const packageData = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+    const packageData = JSON.parse(fs.readFileSync(packagePath, 'utf8')) as {
+        version: string;
+    };
     version = packageData.version;
 } catch {
     version = 'dev';
