@@ -1,9 +1,11 @@
 require('dotenv').config();
-const {bdclient} = require('../src/index.js');
+const { bdclient } = require('@brightdata/sdk');
 
-const client = new bdclient(); // Place your API key in the bdclient or .env file
+// put your API key in the apiKey option or BRIGHTDATA_API_KEY env variable
+const client = new bdclient();
+const result = await client.scrape([
+    'https://example.com',
+    'https://httpbin.org',
+]);
 
-const urls = ['https://example.com', 'https://httpbin.org'];
-const result = client.scrape(urls);
-
-client.download_content(result, 'search_results.txt', 'txt');
+await client.downloadContent(result, 'search_results.txt', 'txt');

@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "esModuleInterop": true,
+        "target": "esnext",
+        "module": "preserve",
+        "lib": ["esnext"],
+        "moduleResolution": "bundler",
+        "moduleDetection": "force",
+        "isolatedModules": true,
+        "strict": true,
+        "noImplicitAny": true,
+        "forceConsistentCasingInFileNames": true,
+        "noUncheckedIndexedAccess": true,
+        "noImplicitOverride": true,
+        "noFallthroughCasesInSwitch": true
+    },
+    "include": ["src/**/*.ts"],
+    "exclude": ["node_modules"]
+}

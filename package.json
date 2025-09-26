@@ -1,52 +1,80 @@
 {
-  "name": "brightdata",
-  "version": "1.1.0",
-  "description": "JavaScript SDK for Bright Data Web Scraping and SERP APIs",
-  "main": "src/index.js",
-  "types": "src/index.d.ts",
-  "scripts": {
-    "test": "jest",
-    "lint": "eslint src/**/*.js",
-    "build": "echo 'Build complete'",
-    "prepublishOnly": "npm test && npm run lint"
-  },
-  "keywords": [
-    "brightdata",
-    "web scraping",
-    "proxy",
-    "serp",
-    "search",
-    "data extraction",
-    "web unlocker"
-  ],
-  "author": "Bright Data <support@brightdata.com>",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/brightdata/bright-data-sdk-js.git"
-  },
-  "bugs": {
-    "url": "https://github.com/brightdata/bright-data-sdk-js/issues"
-  },
-  "homepage": "https://github.com/brightdata/bright-data-sdk-js#readme",
-  "engines": {
-    "node": ">=12.0.0"
-  },
-  "dependencies": {
-    "deasync": "^0.1.30",
-    "dotenv": "^16.0.0",
-    "sync-request": "^6.1.0"
-  },
-  "devDependencies": {
-    "@types/node": "^18.0.0",
-    "eslint": "^8.0.0",
-    "jest": "^29.0.0"
-  },
-  "files": [
-    "src/",
-    "examples/",
-    "README.md",
-    "LICENSE",
-    "CHANGELOG.md"
-  ]
+    "name": "@brightdata/sdk",
+    "version": "0.1.0",
+    "description": "JavaScript SDK for Bright Data Web Scraping and SERP APIs",
+    "main": "dist/cjs/index.cjs",
+    "module": "dist/esm/index.mjs",
+    "types": "dist/types/index.d.ts",
+    "type": "module",
+    "exports": {
+        ".": {
+            "types": "./dist/types/index.d.ts",
+            "import": "./dist/esm/index.mjs",
+            "require": "./dist/cjs/index.cjs"
+        }
+    },
+    "scripts": {
+        "test": "vitest run",
+        "test:dev": "vitest watch",
+        "lint": "eslint src/**/*.ts",
+        "format": "prettier . --write",
+        "typecheck": "tsc --noEmit --project tsconfig.json",
+        "sanity": "npm run lint && npm run typecheck",
+        "build": "npm run build:clean && rollup -c && npm run build:dts",
+        "build:dts": "tsc --project tsconfig.dts.json",
+        "build:clean": "rm -rf ./dist",
+        "build:dev": "rollup --watch -c",
+        "prepublishOnly": "npm test && npm run sanity && npm run build"
+    },
+    "keywords": [
+        "brightdata",
+        "web scraping",
+        "proxy",
+        "serp",
+        "search",
+        "data extraction",
+        "web unlocker"
+    ],
+    "author": "Bright Data <support@brightdata.com>",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/brightdata/bright-data-sdk-js.git"
+    },
+    "bugs": {
+        "url": "https://github.com/brightdata/bright-data-sdk-js/issues"
+    },
+    "homepage": "https://github.com/brightdata/bright-data-sdk-js#readme",
+    "engines": {
+        "node": ">=20.0.0"
+    },
+    "dependencies": {
+        "@supercharge/promise-pool": "^3.2.0",
+        "undici": "^7.16.0",
+        "zod": "^4.1.9"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.35.0",
+        "@rollup/plugin-replace": "^6.0.2",
+        "@rollup/plugin-typescript": "^12.1.4",
+        "@types/node": "^24.5.1",
+        "dotenv": "^17.2.2",
+        "eslint": "^9.35.0",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-prettier": "^5.5.4",
+        "globals": "^16.4.0",
+        "jiti": "^2.5.1",
+        "prettier": "^3.6.2",
+        "rollup": "^4.52.2",
+        "tslib": "^2.8.1",
+        "typescript": "^5.9.2",
+        "typescript-eslint": "^8.44.0",
+        "vitest": "^3.2.4"
+    },
+    "files": [
+        "dist/",
+        "README.md",
+        "package.json",
+        "LICENSE"
+    ]
 }
