@@ -1,6 +1,9 @@
 {
     "name": "@brightdata/sdk",
     "version": "0.1.0",
+    "publishConfig": {
+        "access": "public"
+    },
     "description": "JavaScript SDK for Bright Data Web Scraping and SERP APIs",
     "main": "dist/cjs/index.cjs",
     "module": "dist/esm/index.mjs",
