@@ -275,7 +275,7 @@ For development installation:
 git clone https://github.com/brightdata/bright-data-sdk-js.git
 cd bright-data-sdk-js
 npm install
-npm run dev
+npm run build:dev
 ```
 
 ## Support
