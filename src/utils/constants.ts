@@ -14,6 +14,8 @@ export const API_ENDPOINT = {
     REQUEST: `${API_BASE_URL}/request`,
     ZONE: `${API_BASE_URL}/zone`,
     ZONE_LIST: `${API_BASE_URL}/zone/get_active_zones`,
+    SCRAPE_ASYNC: `${API_BASE_URL}/datasets/v3/trigger`,
+    SCRAPE_SYNC: `${API_BASE_URL}/datasets/v3/scrape`,
 };
 
 export const DEFAULT_WEB_UNLOCKER_ZONE = 'sdk_unlocker';
