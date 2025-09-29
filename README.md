@@ -1,83 +1,60 @@
-# Bright Data SDK for JavaScript/Node.js
-
 <img width="1300" height="200" alt="sdk-banner(1)" src="https://github.com/user-attachments/assets/c4a7857e-10dd-420b-947a-ed2ea5825cb8" />
 
-<h3 align="center">A JavaScript SDK for Bright Data's web unlocking tools, providing easy-to-use scalable methods for scraping, web search, and more.</h3>
+<h3>Bright Data JavaScript SDK providing easy and scalable methods for scraping, web search, and more.</h3>
 
-For a quick start, you can try running our example files in this repository.
-
-## Features
-
-- **Web Scraping**: Scrape websites using Bright Data Web Unlocker API with proxy support
-- **Search Engine Results**: Perform web searches using Bright Data SERP API
-- **Multiple Search Engines**: Support for Google, Bing, and Yandex
-- **Parallel Processing**: Concurrent processing for multiple URLs or queries
-- **Robust Error Handling**: Comprehensive error handling with retry logic
-- **Zone Management**: Automatic zone creation and management
-- **Multiple Output Formats**: HTML, JSON, and Markdown
-- **Dual build**: Both ESM and CommonJS supported
-- **TypeScript**: Fully typed for different combinations of input and output data
-
-## Quick start
-
-### Get your API key
-
-1. Sign up at [Bright Data Website](https://brightdata.com), and navigate to your dashboard
-1. [Create your API key](https://docs.brightdata.com/api-reference/authentication#how-do-i-generate-a-new-api-key%3F)
-1. Copy your API key
-
-### Install
-
-Install the package via NPM:
+## Installation
+To install the package, open your terminal:
 
 ```bash
 npm install @brightdata/sdk
 ```
 
-### Launch your first request
+## Quick start
+### 1. [Signup](https://brightdata.com/cp) and get your API key
 
-Put the following code to `scrape.mjs`:
+### 2. Initialize the Client
 
+Create a file named pizzaSearch.mjs with the follwing content:
 ```javascript
 import { bdclient } from '@brightdata/sdk';
 
 const client = new bdclient({
-    apiKey: '[your_api_key_here]'; // can also be defined as BRIGHTDATA_API_KEY env variable
+    apiKey: '[your_api_key_here]' // can also be defined as BRIGHTDATA_API_KEY env variable
+});
+```
+
+### 3. Launch your first request
+
+Add our search function:
+```javascript
+import { bdclient } from '@brightdata/sdk';
+
+const client = new bdclient({
+    apiKey: '[your_api_key_here]' // can also be defined as BRIGHTDATA_API_KEY env variable
 });
 const result = await client.search('pizza restaurants');
 console.log(result);
 ```
 
-start a simple SERP scraper:
+And run:
 
 ```bash
-node scrape.mjs
+node pizzaSearch.mjs
 ```
 
-## Usage
+## Features
+| Feature                        | Functions                   | Description
+|--------------------------|-----------------------------|-------------------------------------
+| **Scrape every website** | `scrape`                    | Scraping every website using unti bot-detection capabilities
+| **Web search**           | `search`                    | Search on google and other search engines by query (supports batch searches)
+| **Download functions**   | `download_snapshot`, `download_content`  | Download content for both sync and async requests
+| **Client class**         | `bdclient`         | Handles authentication, automatic zone creation and managment, and options for robust error handling
+| **Parallel processing**  | **all functions**  | All functions use Concurrent processing for multiple URLs or queries, and support multiple Output Formats
 
-### 1. Initialize the client
+## Usage 
 
-```javascript
-const { bdclient } = require('@brightdata/sdk');
 
-const client = new bdclient({
-    apiKey: '[your_api_key_here]'; // can also be defined as BRIGHTDATA_API_KEY env variable
-});
-```
-
-Or you can use a custom zone name:
-
-```javascript
-const client = new bdclient({
-    apiKey: '[your_api_key_here]',
-    autoCreateZones: false, // otherwise it creates zones automatically
-    webUnlockerZone: 'custom_zone', // custom zone name for web scraping
-    serpZone: 'custom_serp_zone', // custom zone name for search requests
-});
-```
-
-### 2. Scrape websites
+### Scrape websites
 
 ```javascript
 // single URL - returns markdown string by default
@@ -116,7 +93,7 @@ const result = await client.scrape('https://example.com', {
 });
 ```
 
-### 3. Search Engine Results
+### Search Engine Results
 
 ```javascript
 // single search query
@@ -142,7 +119,7 @@ const results = await client.search(['pizza', 'sushi'], {
 console.log(results);
 ```
 
-### 4. Saving Results
+### Saving Results
 
 ```javascript
 // download scraped content
@@ -156,14 +133,18 @@ console.log(`Content saved to: ${filePath}`);
 
 ## Configuration
 
+### API Key
+
+- you can get your API key from [here](https://brightdata.com/cp/setting/users?=)
+
 ### Environment Variables
 
 Set the following env variables (also configurable in client constructor)
 
 ```env
-BRIGHTDATA_API_KEY=your_bright_data_api_key          # Optional
-BRIGHTDATA_WEB_UNLOCKER_ZONE=your_web_unlocker_zone  # Optional
-BRIGHTDATA_SERP_ZONE=your_serp_zone                  # Optional
+BRIGHTDATA_API_KEY=your_bright_data_api_key
+BRIGHTDATA_WEB_UNLOCKER_ZONE=your_web_unlocker_zone  # Optional, if you have a spesific zone
+BRIGHTDATA_SERP_ZONE=your_serp_zone                  # Optional, if you have a spesific zone
 ```
 
 ### Manage Zones
@@ -172,6 +153,15 @@ BRIGHTDATA_SERP_ZONE=your_serp_zone                  # Optional
 const zones = await client.listZones();
 console.log(`Found ${zones.length} zones`);
 ```
+
+### Constants
+
+| Constant               | Default | Description                    |
+| ---------------------- | ------- | ------------------------------ |
+| `DEFAULT_CONCURRENCY`  | `10`    | Max parallel tasks             |
+| `DEFAULT_TIMEOUT`      | `30000` | Request timeout (milliseconds) |
+| `MAX_RETRIES`          | `3`     | Retry attempts on failure      |
+| `RETRY_BACKOFF_FACTOR` | `1.5`   | Exponential backoff multiplier |
 
 ## API Reference
 
@@ -191,51 +181,53 @@ const client = new bdclient({
 
 ### Key Methods
 
-#### scrape(url, options)
-
+### scrape(url, options)
 Scrapes a single URL or array of URLs using the Web Unlocker.
 
 **Parameters:**
 
-- `url` (string | Array<string>): Single URL string or array of URLs
-- `options` (Object, optional):
-    - `zone` (string): Zone identifier (auto-configured if null)
-    - `format` (string): "json" or "raw" (default: "raw")
-    - `method` (string): HTTP method (default: "GET")
-    - `country` (string): Two-letter country code (default: "")
-    - `dataFormat` (string): "markdown", "screenshot", "html". (default: "html")
-    - `concurrency` (number): Max parallel workers (default: 10)
-    - `timeout` (number): Request timeout in milliseconds (default: 30000)
+| Name                   | Type                                   | Description                                                     | Default   |
+|------------------------|----------------------------------------|-----------------------------------------------------------------|-----------|
+| `url`                  | `string` &#124; `string[]`            | Single URL string or array of URLs                              | —         |
+| `options.zone`         | `string`                               | Zone identifier (auto-configured if `null`)                     | —         |
+| `options.format`       | `"json"` &#124; `"raw"`                | Response format                                                 | `"raw"`   |
+| `options.method`       | `string`                               | HTTP method                                                     | `"GET"`   |
+| `options.country`      | `string`                               | Two-letter country code                                         | `""`      |
+| `options.dataFormat`   | `"markdown"` &#124; `"screenshot"` &#124; `"html"` | Returned content format                                         | `"html"`  |
+| `options.concurrency`  | `number`                               | Max parallel workers                                            | `10`      |
+| `options.timeout`      | `number` (ms)                          | Request timeout                                                 | `30000`   |
 
-#### search(query, options)
+### search(query, options)
 
 Searches using the SERP API
 
 **Parameters:**
 
-- `query` (string | Array<string>): Search query string or array of queries
-- `options` (Object, optional):
-    - `searchEngine` (string): "google", "bing", or "yandex" (default: "google")
-    - `zone` (string): Zone identifier (auto-configured if null)
-    - `format` (string): "json" or "raw" (default: "raw")
-    - `method` (string): HTTP method (default: "GET")
-    - `country` (string): Two-letter country code (default: "")
-    - `dataFormat` (string): "markdown", "screenshot", "html". (default: "html")
-    - `concurrency` (number): Max parallel workers (default: 10)
-    - `timeout` (number): Request timeout in milliseconds (default: 30000)
+| Name                     | Type                                             | Description                                   | Default     |
+|--------------------------|--------------------------------------------------|-----------------------------------------------|-------------|
+| `query`                  | `string` &#124; `string[]`                       | Search query string or array of queries       | —           |
+| `options.searchEngine`   | `"google"` &#124; `"bing"` &#124; `"yandex"`     | Search engine                                 | `"google"`  |
+| `options.zone`           | `string`                                         | Zone identifier (auto-configured if `null`)   | —           |
+| `options.format`         | `"json"` &#124; `"raw"`                          | Response format                               | `"raw"`     |
+| `options.method`         | `string`                                         | HTTP method                                   | `"GET"`     |
+| `options.country`        | `string`                                         | Two-letter country code                       | `""`        |
+| `options.dataFormat`     | `"markdown"` &#124; `"screenshot"` &#124; `"html"`| Returned content format                       | `"html"`    |
+| `options.concurrency`    | `number`                                         | Max parallel workers                          | `10`        |
+| `options.timeout`        | `number` (ms)                                    | Request timeout                               | `30000`     |
 
-#### saveResults(content, options)
+### saveResults(content, options)
 
 Save content to local file.
 
 **Parameters:**
 
-- `content` (any): Content to save
-- `options` (Object, optional):
-    - `filename` (string): Output filename (auto-generated if null)
-    - `format` (string): File format ("json", "csv", "txt", etc.) (default: "json")
+| Name               | Type                                        | Description                                     | Default |
+|--------------------|---------------------------------------------|-------------------------------------------------|---------|
+| `content`          | `any`                                       | Content to save                                 | —       |
+| `options.filename` | `string`                                    | Output filename (auto-generated if `null`)      | —       |
+| `options.format`   | `string` (`"json"`, `"csv"`, `"txt"`)    | File format                                     | `"json"`|
 
-#### listZones()
+### listZones()
 
 List all active zones in your Bright Data account.
 
@@ -257,16 +249,6 @@ try {
     }
 }
 ```
-
-## Configuration Constants
-
-| Constant               | Default | Description                    |
-| ---------------------- | ------- | ------------------------------ |
-| `DEFAULT_CONCURRENCY`  | `10`    | Max parallel tasks             |
-| `DEFAULT_TIMEOUT`      | `30000` | Request timeout (milliseconds) |
-| `MAX_RETRIES`          | `3`     | Retry attempts on failure      |
-| `RETRY_BACKOFF_FACTOR` | `1.5`   | Exponential backoff multiplier |
-
 ## Development
 
 For development installation:
