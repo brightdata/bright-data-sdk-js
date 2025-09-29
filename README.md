@@ -55,7 +55,6 @@ node pizzaSearch.mjs
 
 ## Usage 
 
-
 ### Scrape websites
 
 ```javascript
