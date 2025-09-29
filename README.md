@@ -2,7 +2,8 @@
 
 <h3>Bright Data JavaScript SDK providing easy and scalable methods for scraping, web search, and more.</h3>
 
-## Installation
+## Installation [![@latest](https://img.shields.io/npm/v/@brightdata/sdk.svg)](https://www.npmjs.com/package/@brightdata/sdk)
+
 To install the package, open your terminal:
 
 ```bash
