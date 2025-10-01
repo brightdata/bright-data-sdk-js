@@ -48,7 +48,7 @@ export const request: typeof lib_request = async (url, opts) => {
                 : JSON.stringify(opts.body);
     }
 
-    logRequest(opts?.method || 'GET', String(url), meta);
+    logRequest(opts?.method || 'GET', JSON.stringify(url), meta);
     return lib_request(url, opts);
 };
 
