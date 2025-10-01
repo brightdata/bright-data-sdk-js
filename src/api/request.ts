@@ -1,11 +1,11 @@
 import { PromisePool } from '@supercharge/promise-pool';
 import { API_ENDPOINT, DEFAULT_CONCURRENCY } from '../utils/constants';
-import { getLogger, logRequest } from '../utils/logger';
+import { getLogger } from '../utils/logger';
 import { APIError, BRDError } from '../utils/errors';
 import { request, getDispatcher, assertResponse } from '../utils/net';
 import { getAuthHeaders } from '../utils/auth';
 import { dropEmptyKeys, parseJSON } from '../utils/misc';
-import { ZoneNameSchema } from '../schemas';
+import { ZoneNameSchema } from '../schemas/shared';
 import type {
     RequestOptions,
     SingleRawResponse,
@@ -52,7 +52,7 @@ export class RequestAPI {
     }
 
     init() {
-        this.logger = getLogger(`api.${this.name}`);
+        this.logger = getLogger(`api.request.${this.name}`);
     }
     // prettier-ignore
     async handle(val: string, opts?: RequestJSONOptions): Promise<SingleJSONResponse>;
@@ -118,8 +118,6 @@ export class RequestAPI {
         opt: RequestOptions | RequestJSONOptions = {},
     ): Promise<SingleResponse> {
         const body = this.getRequestBody(val, zone, opt);
-
-        logRequest('POST', API_ENDPOINT.REQUEST, body);
 
         try {
             const response = await request(API_ENDPOINT.REQUEST, {
