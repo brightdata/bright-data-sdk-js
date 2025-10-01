@@ -8,4 +8,9 @@ const result = await client.scrape([
     'https://httpbin.org',
 ]);
 
-await client.downloadContent(result, 'search_results.txt', 'txt');
+const fullname = await client.saveResults(result, {
+    filename: 'search_results.txt',
+    format: 'txt',
+});
+
+console.log(`Results saved to ${fullname}`);
