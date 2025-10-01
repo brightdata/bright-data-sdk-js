@@ -26,7 +26,7 @@
         "build": "npm run build:clean && rollup -c && npm run build:dts",
         "build:dts": "tsc --project tsconfig.dts.json",
         "build:clean": "rm -rf ./dist",
-        "build:dev": "rollup --watch -c",
+        "build:dev": "npm run build:clean && rollup --watch -c",
         "prepublishOnly": "npm test && npm run sanity && npm run build"
     },
     "keywords": [
