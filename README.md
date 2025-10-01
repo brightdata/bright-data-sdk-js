@@ -146,8 +146,8 @@ Set the following env variables (also configurable in client constructor)
 
 ```env
 BRIGHTDATA_API_KEY=your_bright_data_api_key
-BRIGHTDATA_WEB_UNLOCKER_ZONE=your_web_unlocker_zone  # Optional, if you have a spesific zone
-BRIGHTDATA_SERP_ZONE=your_serp_zone                  # Optional, if you have a spesific zone
+BRIGHTDATA_WEB_UNLOCKER_ZONE=your_web_unlocker_zone  # Optional, if you have a specific zone
+BRIGHTDATA_SERP_ZONE=your_serp_zone                  # Optional, if you have a specific zone
 ```
 
 ### Manage Zones
