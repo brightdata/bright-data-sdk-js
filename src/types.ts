@@ -167,3 +167,25 @@ export interface SaveOptions {
      */
     format?: ContentFormat;
 }
+
+interface DatasetOptionsBase {
+    async?: boolean;
+    customOutputFields?: string;
+    includeErrors?: boolean;
+}
+
+export interface DatasetOptionsSync extends DatasetOptionsBase {
+    async?: false;
+    format?: 'json' | 'csv';
+}
+
+export interface DatasetOptionsAsync extends DatasetOptionsBase {
+    async: true;
+    format?: 'json' | 'csv' | 'ndjson' | 'jsonl';
+    type?: 'discover_new';
+    discoverBy?: string;
+    limitPerInput?: number;
+    limitMultipleResults?: number;
+}
+
+export type DatasetOptions = DatasetOptionsSync | DatasetOptionsAsync;
