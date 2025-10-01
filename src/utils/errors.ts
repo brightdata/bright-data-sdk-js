@@ -49,7 +49,10 @@ export class APIError extends BRDError {
         statusCode: number | null = null,
         responseText: string | null = null,
     ) {
-        super(message);
+        let msg = message;
+        if (statusCode) msg += ` [HTTP${statusCode}]`;
+        if (responseText) msg += ` ${responseText}`;
+        super(msg);
         this.name = 'APIError';
         this.statusCode = statusCode;
         this.responseText = responseText;
