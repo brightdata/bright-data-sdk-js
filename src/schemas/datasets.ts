@@ -5,16 +5,21 @@ const DatasetOptionsBaseSchema = z.object({
     includeErrors: z.boolean().optional(),
 });
 
+const SnapshotFormatSchema = z
+    .enum(['json', 'csv', 'ndjson', 'jsonl'])
+    .transform((v) => (v === 'ndjson' ? 'jsonl' : v))
+    .default('jsonl');
+
 const DatasetOptionsSyncSchema = z.object({
     ...DatasetOptionsBaseSchema.shape,
     async: z.literal(false).optional(),
-    format: z.enum(['json', 'csv']).default('json'),
+    format: SnapshotFormatSchema,
 });
 
 const DatasetOptionsAsyncSchema = z.object({
     ...DatasetOptionsBaseSchema.shape,
     async: z.literal(true),
-    format: z.enum(['json', 'csv', 'ndjson', 'jsonl']).default('json'),
+    format: SnapshotFormatSchema,
     type: z.literal('discover_new').optional(),
     discoverBy: z.string().optional(),
     limitPerInput: z.int().positive().optional(),
@@ -29,10 +34,7 @@ export const DatasetOptionsSchema = z.discriminatedUnion('async', [
 export const DatasetInputSchema = z.union([z.httpUrl(), z.array(z.httpUrl())]);
 
 export const SnapshotDownloadOptionsSchema = z.object({
-    format: z
-        .enum(['json', 'csv', 'ndjson', 'jsonl'])
-        .transform((v) => (v === 'ndjson' ? 'jsonl' : v))
-        .default('jsonl'),
+    format: SnapshotFormatSchema,
     compress: z.boolean().default(false),
 });
 

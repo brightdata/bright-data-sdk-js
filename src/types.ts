@@ -168,20 +168,21 @@ export interface SaveOptions {
     format?: ContentFormat;
 }
 
+export type SnapshotFormat = 'json' | 'ndjson' | 'jsonl' | 'csv';
+
 interface DatasetOptionsBase {
     async?: boolean;
+    format?: SnapshotFormat;
     customOutputFields?: string;
     includeErrors?: boolean;
 }
 
 export interface DatasetOptionsSync extends DatasetOptionsBase {
     async?: false;
-    format?: 'json' | 'csv';
 }
 
 export interface DatasetOptionsAsync extends DatasetOptionsBase {
     async: true;
-    format?: 'json' | 'csv' | 'ndjson' | 'jsonl';
     type?: 'discover_new';
     discoverBy?: string;
     limitPerInput?: number;
@@ -191,7 +192,7 @@ export interface DatasetOptionsAsync extends DatasetOptionsBase {
 export type DatasetOptions = DatasetOptionsSync | DatasetOptionsAsync;
 
 export interface SnapshotDownloadOptions {
-    format?: 'json' | 'ndjson' | 'jsonl' | 'csv';
+    format?: SnapshotFormat;
     compress?: boolean;
 }
 
