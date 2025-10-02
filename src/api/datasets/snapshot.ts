@@ -26,7 +26,11 @@ export class SnapshotAPI extends BaseAPI {
         this.name = 'snapshot';
         this.init();
     }
-
+    /**
+     * Get the status of a dataset snapshot.
+     * @param snapshotId - The unique identifier of the snapshot
+     * @returns A promise that resolves with the snapshot status metadata
+     */
     async getStatus(snapshotId: string) {
         const safeId = assertSchema(
             SnapshotIdSchema,
@@ -35,8 +39,13 @@ export class SnapshotAPI extends BaseAPI {
         );
         return this.#getStatus(safeId);
     }
-
-    async download(snapshotId: string, opts: SnapshotDownloadOptions = {}) {
+    /**
+     * Download the data from a dataset snapshot.
+     * @param snapshotId - The unique identifier of the snapshot
+     * @param opts - Download options including format and compression settings
+     * @returns A promise that resolves with the snapshot data
+     */
+    async download(snapshotId: string, options: SnapshotDownloadOptions = {}) {
         const safeId = assertSchema(
             SnapshotIdSchema,
             snapshotId,
@@ -44,7 +53,7 @@ export class SnapshotAPI extends BaseAPI {
         );
         const safeOpts = assertSchema(
             SnapshotDownloadOptionsSchema,
-            opts,
+            options,
             'snapshot.download: invalid options',
         );
         return this.#download(safeId, safeOpts);
