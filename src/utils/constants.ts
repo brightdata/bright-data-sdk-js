@@ -17,6 +17,8 @@ export const API_ENDPOINT = {
     SCRAPE_ASYNC: `${API_BASE_URL}/datasets/v3/trigger`,
     SCRAPE_SYNC: `${API_BASE_URL}/datasets/v3/scrape`,
     SNAPSHOT_STATUS: `${API_BASE_URL}/datasets/v3/progress/{snapshot_id}`,
+    SNAPSHOT_DOWNLOAD: `${API_BASE_URL}/datasets/v3/snapshot/{snapshot_id}`,
+    SNAPSHOT_DELIVER: `${API_BASE_URL}/datasets/v3/deliver/{snapshot_id}`,
 };
 
 export const DEFAULT_WEB_UNLOCKER_ZONE = 'sdk_unlocker';

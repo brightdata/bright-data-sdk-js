@@ -22,6 +22,7 @@ export class LinkedinAPI extends BaseAPI {
         this.logger.info(
             `fetching linkedin profiles for ${getCount(val)} urls`,
         );
+
         return this.invoke(val, DATASET_ID.PROFILE, opt);
     }
 

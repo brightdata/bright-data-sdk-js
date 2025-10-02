@@ -25,3 +25,16 @@ export const DatasetOptionsSchema = z.discriminatedUnion('async', [
     DatasetOptionsAsyncSchema,
     DatasetOptionsSyncSchema,
 ]);
+
+export const SnapshotDownloadOptionsSchema = z.object({
+    format: z
+        .enum(['json', 'csv', 'ndjson', 'jsonl'])
+        .transform((v) => (v === 'ndjson' ? 'jsonl' : v))
+        .default('jsonl'),
+    compress: z.boolean().default(false),
+});
+
+export const SnapshotIdSchema = z
+    .string()
+    .trim()
+    .min(3, 'snapshot id must be at least 3 characters long');

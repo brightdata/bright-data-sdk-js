@@ -189,3 +189,16 @@ export interface DatasetOptionsAsync extends DatasetOptionsBase {
 }
 
 export type DatasetOptions = DatasetOptionsSync | DatasetOptionsAsync;
+
+export interface SnapshotDownloadOptions {
+    format?: 'json' | 'ndjson' | 'jsonl' | 'csv';
+    compress?: boolean;
+}
+
+export type SnapshotStatus = 'running' | 'ready' | 'failed';
+
+export interface SnapshotStatusMeta {
+    snapshotId: string;
+    datasetId: string;
+    status: SnapshotStatus;
+}

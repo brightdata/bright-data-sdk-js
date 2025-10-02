@@ -1,14 +1,13 @@
 import { LinkedinAPI } from './linkedin';
+import { SnapshotAPI } from './snapshot';
 import { BaseAPIOptions } from './base';
 
 export class Router {
+    snapshot: SnapshotAPI;
     linkedin: LinkedinAPI;
 
     constructor(opts: BaseAPIOptions) {
         this.linkedin = new LinkedinAPI(opts);
-    }
-
-    async getSnapshotStatus(snapshotId: string) {
-        return this.linkedin.getSnapshotStatus(snapshotId);
+        this.snapshot = new SnapshotAPI(opts);
     }
 }

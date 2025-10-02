@@ -10,12 +10,6 @@ import type {
     DatasetOptions,
 } from '../../types';
 
-interface StatusResponse {
-    snapshot_id: string;
-    dataset_id: string;
-    status: 'running' | 'ready' | 'failed';
-}
-
 interface WebhookDisabled {
     notify: undefined | false;
 }
@@ -74,7 +68,7 @@ const toList = (val: string | string[]): string[] =>
 export class BaseAPI {
     protected name!: string;
     protected logger!: ReturnType<typeof getLogger>;
-    private authHeaders: ReturnType<typeof getAuthHeaders>;
+    protected authHeaders: ReturnType<typeof getAuthHeaders>;
 
     constructor(opts: BaseAPIOptions) {
         this.authHeaders = getAuthHeaders(opts.apiKey);
@@ -82,26 +76,6 @@ export class BaseAPI {
 
     init() {
         this.logger = getLogger(`api.datasets.${this.name}`);
-    }
-
-    async getSnapshotStatus(snapshotId: string) {
-        this.logger.info(`fetching snapshot status for id ${snapshotId}`);
-        const url = API_ENDPOINT.SNAPSHOT_STATUS.replace(
-            '{snapshot_id}',
-            snapshotId,
-        );
-
-        try {
-            const response = await request(url, {
-                headers: this.authHeaders,
-                dispatcher: getDispatcher(),
-            });
-            const responseTxt = await assertResponse(response);
-            return parseJSON<StatusResponse>(responseTxt);
-        } catch (e: unknown) {
-            if (e instanceof BRDError) throw e;
-            throw new APIError(`operation failed: ${(e as Error).message}`);
-        }
     }
 
     private getRequestBody(
