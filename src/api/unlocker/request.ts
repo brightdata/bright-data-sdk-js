@@ -1,11 +1,11 @@
 import { PromisePool } from '@supercharge/promise-pool';
-import { API_ENDPOINT, DEFAULT_CONCURRENCY } from '../utils/constants';
-import { getLogger } from '../utils/logger';
-import { APIError, BRDError } from '../utils/errors';
-import { request, getDispatcher, assertResponse } from '../utils/net';
-import { getAuthHeaders } from '../utils/auth';
-import { dropEmptyKeys, parseJSON } from '../utils/misc';
-import { ZoneNameSchema } from '../schemas/shared';
+import { API_ENDPOINT, DEFAULT_CONCURRENCY } from '../../utils/constants';
+import { getLogger } from '../../utils/logger';
+import { APIError, BRDError } from '../../utils/errors';
+import { request, getDispatcher, assertResponse } from '../../utils/net';
+import { getAuthHeaders } from '../../utils/auth';
+import { dropEmptyKeys, parseJSON } from '../../utils/misc';
+import { ZoneNameSchema } from '../../schemas/shared';
 import type {
     RequestOptions,
     SingleRawResponse,
@@ -16,8 +16,8 @@ import type {
     SingleResponse,
     BatchResponse,
     ZoneType,
-} from '../types';
-import type { ZonesAPI } from './zones';
+} from '../../types';
+import type { ZonesAPI } from '../zones';
 
 interface RequestQueryBody {
     url: string;

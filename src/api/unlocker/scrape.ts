@@ -1,4 +1,4 @@
-import type { ScrapeOptions } from '../types';
+import type { ScrapeOptions } from '../../types';
 import { RequestAPI, type RequestAPIOptions } from './request';
 
 export class ScrapeAPI extends RequestAPI {

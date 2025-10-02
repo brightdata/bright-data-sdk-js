@@ -1,5 +1,5 @@
-import { ScrapeAPI } from './api/scrape';
-import { SearchAPI } from './api/search';
+import { ScrapeAPI } from './api/unlocker/scrape';
+import { SearchAPI } from './api/unlocker/search';
 import { ZonesAPI } from './api/zones';
 import { Router as DatasetsRouter } from './api/datasets/router';
 import { setup as setupLogger, getLogger } from './utils/logger';
