@@ -28,13 +28,25 @@ export class SnapshotAPI extends BaseAPI {
     }
 
     async getStatus(snapshotId: string) {
-        const safeId = assertSchema(SnapshotIdSchema, snapshotId);
+        const safeId = assertSchema(
+            SnapshotIdSchema,
+            snapshotId,
+            'snapshot.getStatus: invalid snapshot id',
+        );
         return this.#getStatus(safeId);
     }
 
     async download(snapshotId: string, opts: SnapshotDownloadOptions = {}) {
-        const safeId = assertSchema(SnapshotIdSchema, snapshotId);
-        const safeOpts = assertSchema(SnapshotDownloadOptionsSchema, opts);
+        const safeId = assertSchema(
+            SnapshotIdSchema,
+            snapshotId,
+            'snapshot.download: invalid snapshot id',
+        );
+        const safeOpts = assertSchema(
+            SnapshotDownloadOptionsSchema,
+            opts,
+            'snapshot.download: invalid options',
+        );
         return this.#download(safeId, safeOpts);
     }
 

@@ -1,4 +1,9 @@
 import type { DatasetOptions } from '../../types';
+import {
+    DatasetOptionsSchema,
+    DatasetInputSchema,
+} from '../../schemas/datasets';
+import { assertSchema } from '../../schemas/utils';
 import { BaseAPI, type BaseAPIOptions } from './base';
 
 const DATASET_ID = {
@@ -11,6 +16,18 @@ const DATASET_ID = {
 const getCount = (val: string | string[]) =>
     Array.isArray(val) ? val.length : 1;
 
+const assertGetInput = (
+    input: string | string[],
+    opts: DatasetOptions,
+    fn: string,
+) => {
+    const prefix = `linkedin.${fn}: `;
+    return [
+        assertSchema(DatasetInputSchema, input, `${prefix}invalid input`),
+        assertSchema(DatasetOptionsSchema, opts, `${prefix}invalid options`),
+    ] as const;
+};
+
 export class LinkedinAPI extends BaseAPI {
     constructor(opts: BaseAPIOptions) {
         super(opts);
@@ -18,28 +35,31 @@ export class LinkedinAPI extends BaseAPI {
         this.init();
     }
 
-    getProfiles(val: string | string[], opt: DatasetOptions) {
+    getProfiles(input: string | string[], opt: DatasetOptions) {
         this.logger.info(
-            `fetching linkedin profiles for ${getCount(val)} urls`,
+            `fetching linkedin profiles for ${getCount(input)} urls`,
         );
-
-        return this.invoke(val, DATASET_ID.PROFILE, opt);
+        const [safeInput, safeOpt] = assertGetInput(input, opt, 'getProfiles');
+        return this.invoke(safeInput, DATASET_ID.PROFILE, safeOpt);
     }
 
-    getCompanies(val: string | string[], opt: DatasetOptions) {
+    getCompanies(input: string | string[], opt: DatasetOptions) {
         this.logger.info(
-            `fetching linkedin companies for ${getCount(val)} urls`,
+            `fetching linkedin companies for ${getCount(input)} urls`,
         );
-        return this.invoke(val, DATASET_ID.COMPANY, opt);
+        const [safeInput, safeOpt] = assertGetInput(input, opt, 'getCompanies');
+        return this.invoke(safeInput, DATASET_ID.COMPANY, safeOpt);
     }
 
-    getJobs(val: string | string[], opt: DatasetOptions) {
-        this.logger.info(`fetching linkedin jobs for ${getCount(val)} urls`);
-        return this.invoke(val, DATASET_ID.JOB, opt);
+    getJobs(input: string | string[], opt: DatasetOptions) {
+        this.logger.info(`fetching linkedin jobs for ${getCount(input)} urls`);
+        const [safeInput, safeOpt] = assertGetInput(input, opt, 'getJobs');
+        return this.invoke(safeInput, DATASET_ID.JOB, safeOpt);
     }
 
-    getPosts(val: string | string[], opt: DatasetOptions) {
-        this.logger.info(`fetching linkedin posts for ${getCount(val)} urls`);
-        return this.invoke(val, DATASET_ID.POST, opt);
+    getPosts(input: string | string[], opt: DatasetOptions) {
+        this.logger.info(`fetching linkedin posts for ${getCount(input)} urls`);
+        const [safeInput, safeOpt] = assertGetInput(input, opt, 'getPosts');
+        return this.invoke(safeInput, DATASET_ID.POST, safeOpt);
     }
 }

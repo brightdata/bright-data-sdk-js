@@ -26,6 +26,8 @@ export const DatasetOptionsSchema = z.discriminatedUnion('async', [
     DatasetOptionsSyncSchema,
 ]);
 
+export const DatasetInputSchema = z.union([z.httpUrl(), z.array(z.httpUrl())]);
+
 export const SnapshotDownloadOptionsSchema = z.object({
     format: z
         .enum(['json', 'csv', 'ndjson', 'jsonl'])

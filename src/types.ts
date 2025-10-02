@@ -197,8 +197,11 @@ export interface SnapshotDownloadOptions {
 
 export type SnapshotStatus = 'running' | 'ready' | 'failed';
 
-export interface SnapshotStatusMeta {
+export interface SnapshotShortMeta {
     snapshotId: string;
+}
+
+export interface SnapshotStatusMeta extends SnapshotShortMeta {
     datasetId: string;
     status: SnapshotStatus;
 }

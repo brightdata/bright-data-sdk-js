@@ -8,6 +8,7 @@ import type {
     DatasetOptionsAsync,
     DatasetOptionsSync,
     DatasetOptions,
+    SnapshotShortMeta,
 } from '../../types';
 
 interface WebhookDisabled {
@@ -64,6 +65,11 @@ const str2inputRecord = (str: string): InputRecord => ({ url: str });
 
 const toList = (val: string | string[]): string[] =>
     Array.isArray(val) ? val : [val];
+
+const toShortMeta = (responseTxt: string): SnapshotShortMeta => {
+    const { snapshot_id } = parseJSON<DatasetQueryResponseAsync>(responseTxt);
+    return { snapshotId: snapshot_id } as SnapshotShortMeta;
+};
 
 export class BaseAPI {
     protected name!: string;
@@ -142,12 +148,12 @@ export class BaseAPI {
             const responseTxt = await assertResponse(response);
 
             if (opt.async) {
-                return parseJSON<DatasetQueryResponseAsync>(responseTxt);
+                return toShortMeta(responseTxt);
             } else if (response.statusCode === 202) {
                 this.logger.info(
                     'request exeeded sync request timeout, converted to async',
                 );
-                return parseJSON<DatasetQueryResponseAsync>(responseTxt);
+                return toShortMeta(responseTxt);
             }
 
             if (opt.format === 'json') {
