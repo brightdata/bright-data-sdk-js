@@ -107,7 +107,7 @@ export class SnapshotAPI extends BaseAPI {
     }
 
     async #cancel(snapshotId: string) {
-        this.logger.info(`fetching snapshot for id ${snapshotId}`);
+        this.logger.info(`cancelling snapshot for id ${snapshotId}`);
         const url = API_ENDPOINT.SNAPSHOT_CANCEL.replace(
             '{snapshot_id}',
             snapshotId,
