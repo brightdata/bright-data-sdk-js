@@ -1,7 +1,13 @@
-import type { DatasetOptions } from '../../types';
+import type {
+    DatasetOptions,
+    UnknownRecord,
+    UrlFilter,
+    LinkedinJobFilter,
+    LinkedinProfileFilter,
+} from '../../types';
 import {
     DatasetOptionsSchema,
-    DatasetInputSchema,
+    DatasetMixedInputSchema,
 } from '../../schemas/datasets';
 import { assertSchema } from '../../schemas/utils';
 import { BaseAPI, type BaseAPIOptions } from './base';
@@ -13,17 +19,17 @@ const DATASET_ID = {
     POST: 'gd_lyy3tktm25m4avu764',
 };
 
-const getCount = (val: string | string[]) =>
-    Array.isArray(val) ? val.length : 1;
+type CollectOptions = DatasetOptions;
+type DiscoverOptions = Omit<DatasetOptions, 'async' | 'discoverBy' | 'type'>;
 
-const assertGetInput = (
-    input: string | string[],
-    opts: DatasetOptions,
+const assertInput = (
+    input: UnknownRecord[] | string[],
+    opts: DatasetOptions = {},
     fn: string,
 ) => {
     const prefix = `linkedin.${fn}: `;
     return [
-        assertSchema(DatasetInputSchema, input, `${prefix}invalid input`),
+        assertSchema(DatasetMixedInputSchema, input, `${prefix}invalid input`),
         assertSchema(DatasetOptionsSchema, opts, `${prefix}invalid options`),
     ] as const;
 };
@@ -36,50 +42,125 @@ export class LinkedinAPI extends BaseAPI {
     }
     /**
      * Fetch LinkedIn profile data for one or more profile URLs.
-     * @param input - A single LinkedIn profile URL or an array of profile URLs
-     * @param opt - Dataset options to control the request behavior
-     * @returns A promise that resolves with the profile data
+     * @param input - an array of LinkedIn profile URLs
+     * @param opt - dataset options to control the request behavior
+     * @returns a promise that resolves with the profile data or snapshot meta
      */
-    getProfiles(input: string | string[], opt: DatasetOptions) {
-        this.logger.info(
-            `fetching linkedin profiles for ${getCount(input)} urls`,
+    collectProfiles(input: string[], opt: CollectOptions) {
+        this.logger.info(`collectProfiles for ${input.length} urls`);
+        const [safeInput, safeOpt] = assertInput(input, opt, 'collectProfiles');
+        return this.run(safeInput, DATASET_ID.PROFILE, safeOpt);
+    }
+    /**
+     * Find LinkedIn profile data based on provided filters.
+     * @param input - an array of filters to starts collection for
+     * @param opt - dataset options to control the request behavior
+     * @returns a promise that resolves with snapshot meta
+     */
+    discoverProfiles(input: LinkedinProfileFilter[], opt: DiscoverOptions) {
+        this.logger.info(`discoverProfiles for ${input.length} urls`);
+        const [safeInput, safeOpt] = assertInput(
+            input,
+            opt,
+            'discoverProfiles',
         );
-        const [safeInput, safeOpt] = assertGetInput(input, opt, 'getProfiles');
-        return this.invoke(safeInput, DATASET_ID.PROFILE, safeOpt);
+        return this.run(safeInput, DATASET_ID.PROFILE, {
+            ...safeOpt,
+            async: true,
+            type: 'discover_new',
+            discoverBy: 'name',
+        });
     }
     /**
      * Fetch LinkedIn company data for one or more company URLs.
-     * @param input - A single LinkedIn company URL or an array of company URLs
-     * @param opt - Dataset options to control the request behavior
-     * @returns A promise that resolves with the company data
+     * @param input - a single LinkedIn company URL or an array of company URLs
+     * @param opt - dataset options to control the request behavior
+     * @returns a promise that resolves with the company data or snapshot meta
      */
-    getCompanies(input: string | string[], opt: DatasetOptions) {
-        this.logger.info(
-            `fetching linkedin companies for ${getCount(input)} urls`,
+    collectCompanies(input: string[], opt: CollectOptions) {
+        this.logger.info(`collectCompanies for ${input.length} urls`);
+        const [safeInput, safeOpt] = assertInput(
+            input,
+            opt,
+            'collectCompanies',
         );
-        const [safeInput, safeOpt] = assertGetInput(input, opt, 'getCompanies');
-        return this.invoke(safeInput, DATASET_ID.COMPANY, safeOpt);
+        return this.run(safeInput, DATASET_ID.COMPANY, safeOpt);
     }
     /**
      * Fetch LinkedIn job posting data for one or more job URLs.
-     * @param input - A single LinkedIn job URL or an array of job URLs
-     * @param opt - Dataset options to control the request behavior
-     * @returns A promise that resolves with the job data
+     * @param input - a single LinkedIn job URL or an array of job URLs
+     * @param opt - dataset options to control the request behavior
+     * @returns a promise that resolves with the job data or snapshot meta
      */
-    getJobs(input: string | string[], opt: DatasetOptions) {
-        this.logger.info(`fetching linkedin jobs for ${getCount(input)} urls`);
-        const [safeInput, safeOpt] = assertGetInput(input, opt, 'getJobs');
-        return this.invoke(safeInput, DATASET_ID.JOB, safeOpt);
+    collectJobs(input: string[], opt: CollectOptions) {
+        this.logger.info(`collectJobs for ${input.length} urls`);
+        const [safeInput, safeOpt] = assertInput(input, opt, 'collectJobs');
+        return this.run(safeInput, DATASET_ID.JOB, safeOpt);
+    }
+    /**
+     * Find LinkedIn job postings data based on provided filters
+     * @param input - an array of filters to starts collection for
+     * @param opt - dataset options to control the request behavior
+     * @returns a promise that resolves with snapshot meta
+     */
+    discoverJobs(input: LinkedinJobFilter[], opt: DiscoverOptions) {
+        const [safeInput, safeOpt] = assertInput(input, opt, 'discoverJobs');
+        return this.run(safeInput, DATASET_ID.JOB, {
+            ...safeOpt,
+            async: true,
+            type: 'discover_new',
+            discoverBy: 'keyword',
+        });
     }
     /**
      * Fetch LinkedIn post data for one or more post URLs.
-     * @param input - A single LinkedIn post URL or an array of post URLs
-     * @param opt - Dataset options to control the request behavior
-     * @returns A promise that resolves with the post data
+     * @param input - a single LinkedIn post URL or an array of post URLs
+     * @param opt - dataset options to control the request behavior
+     * @returns a promise that resolves with the post data or snapshot meta
      */
-    getPosts(input: string | string[], opt: DatasetOptions) {
-        this.logger.info(`fetching linkedin posts for ${getCount(input)} urls`);
-        const [safeInput, safeOpt] = assertGetInput(input, opt, 'getPosts');
-        return this.invoke(safeInput, DATASET_ID.POST, safeOpt);
+    collectPosts(input: string[], opt: CollectOptions) {
+        this.logger.info(`collectPosts for ${input.length} urls`);
+        const [safeInput, safeOpt] = assertInput(input, opt, 'collectPosts');
+        return this.run(safeInput, DATASET_ID.POST, safeOpt);
+    }
+    /**
+     * Find LinkedIn user posts data based on provided urls
+     * @param input - an array of filters to starts collection for
+     * @param opt - dataset options to control the request behavior
+     * @returns a promise that resolves with snapshot meta
+     */
+    discoverUserPosts(input: UrlFilter[], opt: DiscoverOptions) {
+        this.logger.info(`discoverUserPosts for ${input.length} urls`);
+        const [safeInput, safeOpt] = assertInput(
+            input,
+            opt,
+            'discoverUserPosts',
+        );
+        return this.run(safeInput, DATASET_ID.POST, {
+            ...safeOpt,
+            async: true,
+            type: 'discover_new',
+            discoverBy: 'profile_url',
+        });
+    }
+    /**
+     * Find LinkedIn company posts data based on provided urls
+     * @param input - an array of filters to starts collection for
+     * @param opt - dataset options to control the request behavior
+     * @returns a promise that resolves with snapshot meta
+     */
+    discoverCompanyPosts(input: UrlFilter[], opt: DiscoverOptions) {
+        this.logger.info(`discoverCompanyPosts for ${input.length} urls`);
+        const [safeInput, safeOpt] = assertInput(
+            input,
+            opt,
+            'discoverCompanyPosts',
+        );
+        return this.run(safeInput, DATASET_ID.POST, {
+            ...safeOpt,
+            async: true,
+            type: 'discover_new',
+            discoverBy: 'company_url',
+        });
     }
 }

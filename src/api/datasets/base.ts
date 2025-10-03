@@ -5,10 +5,10 @@ import { request, getDispatcher, assertResponse } from '../../utils/net';
 import { getAuthHeaders } from '../../utils/auth';
 import { dropEmptyKeys, parseJSON } from '../../utils/misc';
 import type {
-    DatasetOptionsAsync,
-    DatasetOptionsSync,
     DatasetOptions,
-    SnapshotShortMeta,
+    UnknownRecord,
+    SnapshotFormat,
+    SnapshotMeta,
 } from '../../types';
 
 interface WebhookDisabled {
@@ -24,52 +24,30 @@ interface WebhookEnabled {
 
 type WebhookSettings = WebhookEnabled | WebhookDisabled;
 
-interface DatasetsQueryParamsBase {
+interface DatasetsQueryParamsSync {
     dataset_id: string;
     custom_output_fields?: string;
     include_errors?: boolean;
+    format?: SnapshotFormat;
 }
 
-type DatasetsQueryParamsAsync = DatasetsQueryParamsBase & {
-    format?: DatasetOptionsAsync['format'];
+type DatasetsQueryParamsAsync = DatasetsQueryParamsSync & {
     type?: 'discover_new';
     discover_by?: string;
     limit_per_input?: number;
     limit_multiple_results?: number;
 } & WebhookSettings;
 
-interface DatasetsQueryParamsSync extends DatasetsQueryParamsBase {
-    format?: DatasetOptionsSync['format'];
-}
-
-interface DatasetQueryResponseAsync {
-    snapshot_id: string;
-}
-
-interface InputRecord {
-    url: string;
-}
-
 interface DatasetsQueryBodySync {
-    input: InputRecord[];
+    input: UnknownRecord[];
     custom_output_fields?: string;
 }
 
-type DatasetsQueryBodyAsync = InputRecord[];
+type DatasetsQueryBodyAsync = UnknownRecord[];
 
 export interface BaseAPIOptions {
     apiKey: string;
 }
-
-const str2inputRecord = (str: string): InputRecord => ({ url: str });
-
-const toList = (val: string | string[]): string[] =>
-    Array.isArray(val) ? val : [val];
-
-const toShortMeta = (responseTxt: string): SnapshotShortMeta => {
-    const { snapshot_id } = parseJSON<DatasetQueryResponseAsync>(responseTxt);
-    return { snapshotId: snapshot_id } as SnapshotShortMeta;
-};
 
 export class BaseAPI {
     protected name!: string;
@@ -84,20 +62,14 @@ export class BaseAPI {
         this.logger = getLogger(`api.datasets.${this.name}`);
     }
 
-    private getRequestBody(
-        urls: string[],
+    #getRequestBody(
+        input: UnknownRecord[],
         opt: DatasetOptions,
     ): DatasetsQueryBodySync | DatasetsQueryBodyAsync {
-        if (opt.async) {
-            return urls.map(str2inputRecord);
-        }
-
-        return {
-            input: urls.map(str2inputRecord),
-        } as DatasetsQueryBodySync;
+        return opt.async ? input : { input };
     }
 
-    private getRequestQuery(
+    #getRequestQuery(
         datasetId: string,
         opt: DatasetOptions,
     ): DatasetsQueryParamsSync | DatasetsQueryParamsAsync {
@@ -107,30 +79,33 @@ export class BaseAPI {
             res = {
                 dataset_id: datasetId,
                 custom_output_fields: opt.customOutputFields,
-            } as DatasetsQueryParamsAsync;
+                discover_by: opt.discoverBy,
+                type: opt.type,
+                format: opt.format,
+                include_errors: opt.includeErrors,
+                limit_per_input: opt.limitPerInput,
+                limit_multiple_results: opt.limitMultipleResults,
+            };
         } else {
             res = {
                 dataset_id: datasetId,
                 custom_output_fields: opt.customOutputFields,
-            } as DatasetsQueryParamsSync;
+                include_errors: opt.includeErrors,
+                format: opt.format,
+            };
         }
 
-        dropEmptyKeys(
-            res as Record<
-                keyof DatasetsQueryParamsAsync | keyof DatasetsQueryParamsSync,
-                unknown
-            >,
-        );
+        dropEmptyKeys(res as Record<keyof DatasetsQueryParamsSync, unknown>);
 
         return res;
     }
 
-    protected async invoke(
-        val: string | string[],
+    protected async run(
+        val: UnknownRecord[],
         datasetId: string,
         opt: DatasetOptions,
     ) {
-        const body = this.getRequestBody(toList(val), opt);
+        const body = this.#getRequestBody(val, opt);
 
         const endpoint = opt.async
             ? API_ENDPOINT.SCRAPE_ASYNC
@@ -139,7 +114,7 @@ export class BaseAPI {
         try {
             const response = await request(endpoint, {
                 method: 'POST',
-                query: this.getRequestQuery(datasetId, opt),
+                query: this.#getRequestQuery(datasetId, opt),
                 body: JSON.stringify(body),
                 headers: this.authHeaders,
                 dispatcher: getDispatcher(),
@@ -148,16 +123,16 @@ export class BaseAPI {
             const responseTxt = await assertResponse(response);
 
             if (opt.async) {
-                return toShortMeta(responseTxt);
+                return parseJSON<SnapshotMeta>(responseTxt);
             } else if (response.statusCode === 202) {
                 this.logger.info(
                     'request exeeded sync request timeout, converted to async',
                 );
-                return toShortMeta(responseTxt);
+                return parseJSON<SnapshotMeta>(responseTxt);
             }
 
             if (opt.format === 'json') {
-                return parseJSON<Record<string, unknown>[]>(responseTxt);
+                return parseJSON<UnknownRecord[]>(responseTxt);
             }
 
             return responseTxt;
