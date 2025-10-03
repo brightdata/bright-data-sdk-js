@@ -9,16 +9,9 @@ import {
 import { assertSchema } from '../../schemas/utils';
 import type {
     SnapshotDownloadOptions,
-    SnapshotStatus,
-    SnapshotStatusMeta,
+    SnapshotStatusResponse,
 } from '../../types';
 import { BaseAPI, BaseAPIOptions } from './base';
-
-interface StatusRawResponse {
-    snapshot_id: string;
-    dataset_id: string;
-    status: SnapshotStatus;
-}
 
 export class SnapshotAPI extends BaseAPI {
     constructor(opts: BaseAPIOptions) {
@@ -58,6 +51,19 @@ export class SnapshotAPI extends BaseAPI {
         );
         return this.#download(safeId, safeOpts);
     }
+    /**
+     * Cancel the dataset gathering process.
+     * @param snapshotId - The unique identifier of the snapshot
+     * @returns A promise that resolves once the snapshot is cancelled
+     */
+    async cancel(snapshotId: string): Promise<void> {
+        const safeId = assertSchema(
+            SnapshotIdSchema,
+            snapshotId,
+            'snapshot.cancel: invalid snapshot id',
+        );
+        return this.#cancel(safeId);
+    }
 
     async #getStatus(snapshotId: string) {
         this.logger.info(`fetching snapshot status for id ${snapshotId}`);
@@ -72,13 +78,7 @@ export class SnapshotAPI extends BaseAPI {
                 dispatcher: getDispatcher(),
             });
             const responseTxt = await assertResponse(response);
-            const raw = parseJSON<StatusRawResponse>(responseTxt);
-
-            return {
-                snapshotId: raw.snapshot_id,
-                datasetId: raw.dataset_id,
-                status: raw.status,
-            } as SnapshotStatusMeta;
+            return parseJSON<SnapshotStatusResponse>(responseTxt);
         } catch (e: unknown) {
             if (e instanceof BRDError) throw e;
             throw new APIError(`operation failed: ${(e as Error).message}`);
@@ -100,6 +100,27 @@ export class SnapshotAPI extends BaseAPI {
             });
 
             return await assertResponse(response, false);
+        } catch (e: unknown) {
+            if (e instanceof BRDError) throw e;
+            throw new APIError(`operation failed: ${(e as Error).message}`);
+        }
+    }
+
+    async #cancel(snapshotId: string) {
+        this.logger.info(`fetching snapshot for id ${snapshotId}`);
+        const url = API_ENDPOINT.SNAPSHOT_CANCEL.replace(
+            '{snapshot_id}',
+            snapshotId,
+        );
+
+        try {
+            const response = await request(url, {
+                method: 'POST',
+                headers: this.authHeaders,
+                dispatcher: getDispatcher(),
+            });
+
+            await assertResponse(response);
         } catch (e: unknown) {
             if (e instanceof BRDError) throw e;
             throw new APIError(`operation failed: ${(e as Error).message}`);

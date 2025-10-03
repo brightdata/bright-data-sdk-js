@@ -19,6 +19,7 @@ export const API_ENDPOINT = {
     SNAPSHOT_STATUS: `${API_BASE_URL}/datasets/v3/progress/{snapshot_id}`,
     SNAPSHOT_DOWNLOAD: `${API_BASE_URL}/datasets/v3/snapshot/{snapshot_id}`,
     SNAPSHOT_DELIVER: `${API_BASE_URL}/datasets/v3/deliver/{snapshot_id}`,
+    SNAPSHOT_CANCEL: `${API_BASE_URL}/datasets/v3/snapshot/{snapshot_id}/cancel`,
 };
 
 export const DEFAULT_WEB_UNLOCKER_ZONE = 'sdk_unlocker';
