@@ -1,4 +1,4 @@
-import type { SearchOptions, SearchEngine } from '../types';
+import type { SearchOptions, SearchEngine } from '../../types';
 import { RequestAPI, type RequestAPIOptions } from './request';
 
 const toSERPrl = (searchEngine: SearchEngine = 'google', query: string) => {

@@ -1,6 +1,7 @@
-import { ScrapeAPI } from './api/scrape';
-import { SearchAPI } from './api/search';
+import { ScrapeAPI } from './api/unlocker/scrape';
+import { SearchAPI } from './api/unlocker/search';
 import { ZonesAPI } from './api/zones';
+import { Router as DatasetsRouter } from './api/datasets/router';
 import { setup as setupLogger, getLogger } from './utils/logger';
 import {
     DEFAULT_WEB_UNLOCKER_ZONE,
@@ -9,17 +10,16 @@ import {
 import { ValidationError } from './utils/errors';
 import { maskKey } from './utils/misc';
 import { writeContent, stringifyResults, getFilename } from './utils/files';
+import { assertSchema } from './schemas/utils';
+import { ScrapeOptionsSchema, SearchOptionsSchema } from './schemas/request';
 import {
-    ClientOptionsSchema,
-    ApiKeySchema,
-    ScrapeOptionsSchema,
-    SearchOptionsSchema,
-    SearchQueryParamSchema,
     URLParamSchema,
+    SearchQueryParamSchema,
+    ApiKeySchema,
     VerboseSchema,
-    SaveOptionsSchema,
-    assertSchema,
-} from './schemas';
+    ClientOptionsSchema,
+} from './schemas/client';
+import { SaveOptionsSchema } from './schemas/misc';
 import type {
     ZoneInfo,
     BdClientOptions,
@@ -65,6 +65,7 @@ export class bdclient {
     private searchAPI: SearchAPI;
     private zonesAPI: ZonesAPI;
     private logger!: ReturnType<typeof getLogger>;
+    datasets: DatasetsRouter;
 
     constructor(options?: BdClientOptions) {
         const opt = assertSchema(
@@ -116,6 +117,7 @@ export class bdclient {
             autoCreateZones: opt.autoCreateZones,
             zone: opt.serpZone || BRIGHTDATA_SERP_ZONE || DEFAULT_SERP_ZONE,
         });
+        this.datasets = new DatasetsRouter({ apiKey });
     }
     /**
      * Scrape a single URL using Bright Data Web Unlocker API

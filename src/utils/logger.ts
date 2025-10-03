@@ -77,11 +77,11 @@ function log(level: LOG_LEVEL, name: string, message: string, extra = {}) {
     }
 }
 
-export function logRequest(method: string, url: string, data = {}) {
+export function logRequest(method: string, url: string, data: unknown) {
     const logger = getLogger('http.request');
     logger.debug(`${method} ${url}`, {
         method,
         url,
-        data: typeof data == 'object' ? JSON.stringify(data) : data,
+        data: typeof data === 'string' ? data : JSON.stringify(data),
     });
 }
