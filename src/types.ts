@@ -213,6 +213,14 @@ export interface UrlFilter extends UnknownRecord {
     url: string;
 }
 
+export interface ChatgptFilter extends UnknownRecord {
+    prompt: string;
+    additional_prompt?: string;
+    country?: string;
+    require_sources?: boolean;
+    web_search?: boolean;
+}
+
 export interface LinkedinProfileFilter extends UnknownRecord {
     first_name?: string;
     last_name?: string;
