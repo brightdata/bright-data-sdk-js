@@ -17,6 +17,28 @@ export interface DatasetOptionsAsync extends DatasetOptionsBase {
     discoverBy?: string;
     limitPerInput?: number;
     limitMultipleResults?: number;
+    /**
+     * Enter the URL where notifications or status updates will be sent.
+     * Ensure the endpoint is ready to receive these updates.
+     */
+    notify?: string;
+    /**
+     * The URL where you would like to receive automated data updates.
+     * Ensure that your endpoint is properly configured to handle
+     * incoming requests.
+     */
+    endpoint?: string;
+    /**
+     * Provide the authorization token or credentials that will be included
+     * in the request headers for secure communication with your endpoint.
+     */
+    authHeader?: string;
+    /**
+     * Make sure your endpoint supports compressed data when toggling
+     * this option off.
+     * @default true
+     */
+    uncompressedWebhook?: boolean;
 }
 
 export type DatasetOptions = DatasetOptionsSync | DatasetOptionsAsync;
@@ -173,4 +195,19 @@ export interface AmazonCollectReviewsFilter extends UnknownRecord {
      * List of reviews IDs to exclude from collection
      */
     reviews_to_not_include?: string[];
+}
+
+export interface AmazonCollectSearchFilter extends UnknownRecord {
+    /**
+     * Domain URL to search at
+     */
+    url: string;
+    /**
+     * Keyword for searching products
+     */
+    keyword: string;
+    /**
+     * pages to search back
+     */
+    pages_to_search?: number;
 }

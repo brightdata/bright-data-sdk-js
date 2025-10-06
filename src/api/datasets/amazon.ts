@@ -3,6 +3,7 @@ import type {
     UnknownRecord,
     AmazonCollectProductsFilter,
     AmazonCollectReviewsFilter,
+    AmazonCollectSearchFilter,
 } from '../../types/datasets';
 import {
     DatasetOptionsSchema,
@@ -38,7 +39,7 @@ export class AmazonAPI extends BaseAPI {
     }
     /**
      * fetch Amazon products for one or more URLs
-     * @param input - an array of URLs
+     * @param input - an array of URLs or filters
      * @param opt - dataset options to control the request behavior
      * @returns a promise that resolves with the response data or snapshot meta
      */
@@ -52,7 +53,7 @@ export class AmazonAPI extends BaseAPI {
     }
     /**
      * fetch Amazon product reviews by product URLs
-     * @param input - an array of URLs
+     * @param input - an array of URLs or filters
      * @param opt - dataset options to control the request behavior
      * @returns a promise that resolves with the response data or snapshot meta
      */
@@ -74,5 +75,23 @@ export class AmazonAPI extends BaseAPI {
         this.logger.info(`collectSellers for ${input.length} urls`);
         const [safeInput, safeOpt] = assertInput(input, opt, 'collectSellers');
         return this.run(safeInput, DATASET_ID.SELLER, safeOpt);
+    }
+    /**
+     * fetch Amazon product search results
+     * @param input - an array of filters
+     * @param opt - dataset options to control the request behavior
+     * @returns a promise that resolves with the response data or snapshot meta
+     */
+    collectProductSearch(
+        input: AmazonCollectSearchFilter[],
+        opt: DatasetOptions,
+    ) {
+        this.logger.info(`collectProductSearch for ${input.length} urls`);
+        const [safeInput, safeOpt] = assertInput(
+            input,
+            opt,
+            'collectProductSearch',
+        );
+        return this.run(safeInput, DATASET_ID.SEARCH, safeOpt);
     }
 }
