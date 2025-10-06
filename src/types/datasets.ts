@@ -318,3 +318,32 @@ export interface InstagramDiscoverReelsByProfileURLFilter
      */
     end_date?: string;
 }
+
+export interface FacebookCollectUserPostsFilter extends UnknownRecord {
+    /**
+     * Search posts by Facebook page, group,
+     * or open profile URL (only posts visible and discoverable on
+     * the input URL's page)
+     */
+    url: string;
+    /**
+     * The number of recent posts to collect, missing value indicates no limit.
+     */
+    num_of_posts?: number;
+    /**
+     * Post id's to exclude from the collection
+     */
+    posts_to_not_include?: string[];
+    /**
+     * Start date filter MM-DD-YYYY (should be earlier than "end_date")
+     */
+    start_date?: string;
+    /**
+     * End date filter MM-DD-YYYY (should be later than "start_date")
+     */
+    end_date?: string;
+    /**
+     * Retrieve profile data even if no posts are available.
+     */
+    include_profile_data?: boolean;
+}
