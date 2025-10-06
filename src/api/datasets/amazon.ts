@@ -1,4 +1,9 @@
-import type { DatasetOptions, UnknownRecord } from '../../types/datasets';
+import type {
+    DatasetOptions,
+    UnknownRecord,
+    AmazonCollectProductsFilter,
+    AmazonCollectReviewsFilter,
+} from '../../types/datasets';
 import {
     DatasetOptionsSchema,
     DatasetMixedInputSchema,
@@ -37,7 +42,10 @@ export class AmazonAPI extends BaseAPI {
      * @param opt - dataset options to control the request behavior
      * @returns a promise that resolves with the response data or snapshot meta
      */
-    collectProducts(input: string[] | UnknownRecord[], opt: DatasetOptions) {
+    collectProducts(
+        input: string[] | AmazonCollectProductsFilter[],
+        opt: DatasetOptions,
+    ) {
         this.logger.info(`collectProducts for ${input.length} urls`);
         const [safeInput, safeOpt] = assertInput(input, opt, 'collectProducts');
         return this.run(safeInput, DATASET_ID.PRODUCT, safeOpt);
@@ -48,7 +56,10 @@ export class AmazonAPI extends BaseAPI {
      * @param opt - dataset options to control the request behavior
      * @returns a promise that resolves with the response data or snapshot meta
      */
-    collectReviews(input: string[], opt: DatasetOptions) {
+    collectReviews(
+        input: string[] | AmazonCollectReviewsFilter[],
+        opt: DatasetOptions,
+    ) {
         this.logger.info(`collectReviews for ${input.length} urls`);
         const [safeInput, safeOpt] = assertInput(input, opt, 'collectReviews');
         return this.run(safeInput, DATASET_ID.REVIEW, safeOpt);
