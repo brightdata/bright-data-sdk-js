@@ -42,6 +42,12 @@ export const DatasetMixedInputSchema = z
         v.map((item) => (typeof item === 'string' ? { url: item } : item)),
     );
 
+export const ChatGPTInputSchema = z
+    .clone(DatasetMixedInputSchema)
+    .transform((v) =>
+        v.map((item) => ({ ...item, url: 'https://chatgpt.com/' })),
+    );
+
 export const SnapshotDownloadOptionsSchema = z.object({
     format: SnapshotFormatSchema,
     compress: z.boolean().default(false),
