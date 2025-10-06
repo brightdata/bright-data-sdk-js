@@ -4,7 +4,7 @@ import { getAuthHeaders } from '../utils/auth';
 import { parseJSON } from '../utils/misc';
 import { request, assertResponse } from '../utils/net';
 import { ZoneError, APIError, BRDError } from '../utils/errors';
-import type { ZoneInfo, ZoneInfoResponse } from '../types';
+import type { ZoneInfo, ZoneInfoResponse } from '../types/zones';
 
 const logger = getLogger('api.zones');
 

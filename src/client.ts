@@ -20,10 +20,9 @@ import {
     ClientOptionsSchema,
 } from './schemas/client';
 import { SaveOptionsSchema } from './schemas/misc';
+import type { BdClientOptions, SaveOptions } from './types/client';
+import type { ZoneInfo } from './types/zones';
 import type {
-    ZoneInfo,
-    BdClientOptions,
-    SaveOptions,
     ScrapeJSONOptions,
     SearchJSONOptions,
     SingleJSONResponse,
@@ -33,7 +32,7 @@ import type {
     SingleRawResponse,
     BatchRawResponse,
     AnyResponse,
-} from './types';
+} from './types/request';
 
 /**
  * Create a new bdclient instance

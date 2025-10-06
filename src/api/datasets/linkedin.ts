@@ -1,10 +1,11 @@
 import type {
     DatasetOptions,
+    DiscoverOptions,
     UnknownRecord,
     UrlFilter,
     LinkedinJobFilter,
     LinkedinProfileFilter,
-} from '../../types';
+} from '../../types/datasets';
 import {
     DatasetOptionsSchema,
     DatasetMixedInputSchema,
@@ -18,9 +19,6 @@ const DATASET_ID = {
     JOB: 'gd_lpfll7v5hcqtkxl6l',
     POST: 'gd_lyy3tktm25m4avu764',
 };
-
-type CollectOptions = DatasetOptions;
-type DiscoverOptions = Omit<DatasetOptions, 'async' | 'discoverBy' | 'type'>;
 
 const assertInput = (
     input: UnknownRecord[] | string[],
@@ -46,7 +44,7 @@ export class LinkedinAPI extends BaseAPI {
      * @param opt - dataset options to control the request behavior
      * @returns a promise that resolves with the profile data or snapshot meta
      */
-    collectProfiles(input: string[], opt: CollectOptions) {
+    collectProfiles(input: string[], opt: DatasetOptions) {
         this.logger.info(`collectProfiles for ${input.length} urls`);
         const [safeInput, safeOpt] = assertInput(input, opt, 'collectProfiles');
         return this.run(safeInput, DATASET_ID.PROFILE, safeOpt);
@@ -77,7 +75,7 @@ export class LinkedinAPI extends BaseAPI {
      * @param opt - dataset options to control the request behavior
      * @returns a promise that resolves with the company data or snapshot meta
      */
-    collectCompanies(input: string[], opt: CollectOptions) {
+    collectCompanies(input: string[], opt: DatasetOptions) {
         this.logger.info(`collectCompanies for ${input.length} urls`);
         const [safeInput, safeOpt] = assertInput(
             input,
@@ -92,7 +90,7 @@ export class LinkedinAPI extends BaseAPI {
      * @param opt - dataset options to control the request behavior
      * @returns a promise that resolves with the job data or snapshot meta
      */
-    collectJobs(input: string[], opt: CollectOptions) {
+    collectJobs(input: string[], opt: DatasetOptions) {
         this.logger.info(`collectJobs for ${input.length} urls`);
         const [safeInput, safeOpt] = assertInput(input, opt, 'collectJobs');
         return this.run(safeInput, DATASET_ID.JOB, safeOpt);
@@ -118,7 +116,7 @@ export class LinkedinAPI extends BaseAPI {
      * @param opt - dataset options to control the request behavior
      * @returns a promise that resolves with the post data or snapshot meta
      */
-    collectPosts(input: string[], opt: CollectOptions) {
+    collectPosts(input: string[], opt: DatasetOptions) {
         this.logger.info(`collectPosts for ${input.length} urls`);
         const [safeInput, safeOpt] = assertInput(input, opt, 'collectPosts');
         return this.run(safeInput, DATASET_ID.POST, safeOpt);

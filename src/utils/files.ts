@@ -4,7 +4,8 @@ import path from 'node:path';
 import { getLogger } from './logger';
 import { BRDError, FSError } from './errors';
 import { isStrArray } from './misc';
-import type { SingleResponse, BatchResponse, ContentFormat } from '../types';
+import type { SingleResponse, BatchResponse } from '../types/request';
+import type { ContentFormat } from '../types/client';
 
 const logger = getLogger('utils.files');
 

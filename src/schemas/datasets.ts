@@ -23,6 +23,10 @@ const DatasetOptionsAsyncSchema = z.object({
     discoverBy: z.string().optional(),
     limitPerInput: z.int().positive().optional(),
     limitMultipleResults: z.int().positive().optional(),
+    notify: z.httpUrl().optional(),
+    endpoint: z.httpUrl().optional(),
+    authHeader: z.string().optional(),
+    uncompressedWebhook: z.boolean().default(true),
 });
 
 export const DatasetOptionsSchema = z.discriminatedUnion('async', [
