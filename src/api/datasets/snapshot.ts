@@ -10,7 +10,7 @@ import { assertSchema } from '../../schemas/utils';
 import type {
     SnapshotDownloadOptions,
     SnapshotStatusResponse,
-} from '../../types';
+} from '../../types/datasets';
 import { BaseAPI, BaseAPIOptions } from './base';
 
 export class SnapshotAPI extends BaseAPI {

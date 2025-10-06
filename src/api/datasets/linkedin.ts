@@ -4,7 +4,7 @@ import type {
     UrlFilter,
     LinkedinJobFilter,
     LinkedinProfileFilter,
-} from '../../types';
+} from '../../types/datasets';
 import {
     DatasetOptionsSchema,
     DatasetMixedInputSchema,

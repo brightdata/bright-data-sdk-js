@@ -1,4 +1,8 @@
-import type { DatasetOptions, UnknownRecord, ChatgptFilter } from '../../types';
+import type {
+    DatasetOptions,
+    UnknownRecord,
+    ChatgptFilter,
+} from '../../types/datasets';
 import {
     DatasetOptionsSchema,
     ChatGPTInputSchema,

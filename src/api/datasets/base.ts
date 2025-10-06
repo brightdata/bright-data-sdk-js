@@ -9,7 +9,7 @@ import type {
     UnknownRecord,
     SnapshotFormat,
     SnapshotMeta,
-} from '../../types';
+} from '../../types/datasets';
 
 interface WebhookDisabled {
     notify: undefined | false;
@@ -79,10 +79,10 @@ export class BaseAPI {
             res = {
                 dataset_id: datasetId,
                 custom_output_fields: opt.customOutputFields,
+                include_errors: opt.includeErrors,
+                format: opt.format,
                 discover_by: opt.discoverBy,
                 type: opt.type,
-                format: opt.format,
-                include_errors: opt.includeErrors,
                 limit_per_input: opt.limitPerInput,
                 limit_multiple_results: opt.limitMultipleResults,
             };
