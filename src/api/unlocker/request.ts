@@ -6,6 +6,7 @@ import { request, getDispatcher, assertResponse } from '../../utils/net';
 import { getAuthHeaders } from '../../utils/auth';
 import { dropEmptyKeys, parseJSON } from '../../utils/misc';
 import { ZoneNameSchema } from '../../schemas/shared';
+import type { ZoneType } from '../../types/zones';
 import type {
     RequestOptions,
     SingleRawResponse,
@@ -15,8 +16,7 @@ import type {
     BatchJSONResponse,
     SingleResponse,
     BatchResponse,
-    ZoneType,
-} from '../../types';
+} from '../../types/request';
 import type { ZonesAPI } from '../zones';
 
 interface RequestQueryBody {
