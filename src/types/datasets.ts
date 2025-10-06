@@ -266,3 +266,55 @@ export interface AmazonDiscoverProductsByUPCFilter extends UnknownRecord {
      */
     upc: string;
 }
+
+export interface InstagramDiscoverPostsByProfileURLFilter
+    extends UnknownRecord {
+    /**
+     * Instagram profile url
+     */
+    url: string;
+    /**
+     * The number of recent posts to collect, missing value indicates no limit.
+     */
+    num_of_posts?: number;
+    /**
+     * Post ID's not to include
+     */
+    posts_to_not_include?: string[];
+    /**
+     * Start date filter MM-DD-YYYY (should be earlier than "end_date")
+     */
+    start_date?: string;
+    /**
+     * End date filter MM-DD-YYYY (should be later than "start_date")
+     */
+    end_date?: string;
+    /**
+     * Posts to collect by type, can be post or reel
+     */
+    post_type?: 'post' | 'reel';
+}
+
+export interface InstagramDiscoverReelsByProfileURLFilter
+    extends UnknownRecord {
+    /**
+     * Instagram profile url
+     */
+    url: string;
+    /**
+     * The number of recent posts to collect, missing value indicates no limit.
+     */
+    num_of_posts?: number;
+    /**
+     * Post ID's not to include
+     */
+    posts_to_not_include?: string[];
+    /**
+     * Start date filter MM-DD-YYYY (should be earlier than "end_date")
+     */
+    start_date?: string;
+    /**
+     * End date filter MM-DD-YYYY (should be later than "start_date")
+     */
+    end_date?: string;
+}

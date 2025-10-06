@@ -1,4 +1,10 @@
-import type { DatasetOptions, UnknownRecord } from '../../types/datasets';
+import type {
+    DatasetOptions,
+    DiscoverOptions,
+    UnknownRecord,
+    InstagramDiscoverPostsByProfileURLFilter,
+    InstagramDiscoverReelsByProfileURLFilter,
+} from '../../types/datasets';
 import {
     DatasetOptionsSchema,
     DatasetMixedInputSchema,
@@ -54,6 +60,29 @@ export class InstagramAPI extends BaseAPI {
         return this.run(safeInput, DATASET_ID.POST, safeOpt);
     }
     /**
+     * Discover Instagram posts by profile URL
+     * @param input - an array of filters to starts collection for
+     * @param opt - dataset options to control the request behavior
+     * @returns a promise that resolves with snapshot meta
+     */
+    discoverPostsByProfileURL(
+        input: string[] | InstagramDiscoverPostsByProfileURLFilter[],
+        opt: DiscoverOptions,
+    ) {
+        this.logger.info(`discoverPostsByProfileURL for ${input.length} urls`);
+        const [safeInput, safeOpt] = assertInput(
+            input,
+            opt,
+            'discoverPostsByProfileURL',
+        );
+        return this.run(safeInput, DATASET_ID.POST, {
+            ...safeOpt,
+            async: true,
+            type: 'discover_new',
+            discoverBy: 'url',
+        });
+    }
+    /**
      * Fetch Instagram reel data for one or more reel URLs.
      * @param input - an array of Instagram reel URLs
      * @param opt - dataset options to control the request behavior
@@ -63,6 +92,54 @@ export class InstagramAPI extends BaseAPI {
         this.logger.info(`collectReels for ${input.length} urls`);
         const [safeInput, safeOpt] = assertInput(input, opt, 'collectReels');
         return this.run(safeInput, DATASET_ID.REEL, safeOpt);
+    }
+    /**
+     * Discover reels video from Instagram profile or direct search url
+     * @param input - an array of filters to starts collection for
+     * @param opt - dataset options to control the request behavior
+     * @returns a promise that resolves with snapshot meta
+     */
+    discoverReelsByProfileURL(
+        input: string[] | InstagramDiscoverReelsByProfileURLFilter[],
+        opt: DiscoverOptions,
+    ) {
+        this.logger.info(`discoverReelsByProfileURL for ${input.length} urls`);
+        const [safeInput, safeOpt] = assertInput(
+            input,
+            opt,
+            'discoverReelsByProfileURL',
+        );
+        return this.run(safeInput, DATASET_ID.REEL, {
+            ...safeOpt,
+            async: true,
+            type: 'discover_new',
+            discoverBy: 'url',
+        });
+    }
+    /**
+     * Collect all Reels from Instagram profiles (without the post timestamp)
+     * @param input - an array of filters to starts collection for
+     * @param opt - dataset options to control the request behavior
+     * @returns a promise that resolves with snapshot meta
+     */
+    discoverAllReelsByProfileURL(
+        input: string[] | InstagramDiscoverReelsByProfileURLFilter[],
+        opt: DiscoverOptions,
+    ) {
+        this.logger.info(
+            `discoverAllReelsByProfileURL for ${input.length} urls`,
+        );
+        const [safeInput, safeOpt] = assertInput(
+            input,
+            opt,
+            'discoverAllReelsByProfileURL',
+        );
+        return this.run(safeInput, DATASET_ID.REEL, {
+            ...safeOpt,
+            async: true,
+            type: 'discover_new',
+            discoverBy: 'url_all_reels',
+        });
     }
     /**
      * Fetch Instagram comments data for one or more post URLs.
