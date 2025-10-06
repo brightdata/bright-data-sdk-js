@@ -43,6 +43,11 @@ export interface DatasetOptionsAsync extends DatasetOptionsBase {
 
 export type DatasetOptions = DatasetOptionsSync | DatasetOptionsAsync;
 
+export type DiscoverOptions = Omit<
+    DatasetOptions,
+    'async' | 'discoverBy' | 'type'
+>;
+
 export interface SnapshotDownloadOptions {
     format?: SnapshotFormat;
     compress?: boolean;
@@ -210,4 +215,54 @@ export interface AmazonCollectSearchFilter extends UnknownRecord {
      * pages to search back
      */
     pages_to_search?: number;
+}
+
+export interface AmazonDiscoverProductsByBSUrlFilter extends UnknownRecord {
+    /**
+     * Best Seller category URL
+     */
+    category_url: string;
+    /**
+     * Collect products from child categories of the main category
+     */
+    collect_child_categories?: boolean;
+}
+
+export interface AmazonDiscoverProductsByCategoryURLFilter
+    extends UnknownRecord {
+    /**
+     * Category URL
+     */
+    url: string;
+    /**
+     * Choose how to sort the category page: best sellers, newest arrivals,
+     * customer reviews, price, or featured
+     */
+    sort_by?: string;
+    /**
+     * The ZIP code for the area you want to search from
+     */
+    zipcode?: string;
+}
+
+export interface AmazonDiscoverProductsByKeywordFilter extends UnknownRecord {
+    /**
+     * Keyword to search by
+     */
+    keyword: string;
+}
+
+export interface AmazonDiscoverProductsByKeywordFilter extends UnknownRecord {
+    /**
+     * Keyword to search by
+     */
+    keyword: string;
+}
+
+export interface AmazonDiscoverProductsByUPCFilter extends UnknownRecord {
+    /**
+     * Most of the time, each UPC number will return a single product,
+     * but in some cases, it may return multiple products
+     */
+    upc: string;
 }

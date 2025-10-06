@@ -1,9 +1,14 @@
 import type {
     DatasetOptions,
+    DiscoverOptions,
     UnknownRecord,
     AmazonCollectProductsFilter,
     AmazonCollectReviewsFilter,
     AmazonCollectSearchFilter,
+    AmazonDiscoverProductsByBSUrlFilter,
+    AmazonDiscoverProductsByCategoryURLFilter,
+    AmazonDiscoverProductsByKeywordFilter,
+    AmazonDiscoverProductsByUPCFilter,
 } from '../../types/datasets';
 import {
     DatasetOptionsSchema,
@@ -50,6 +55,102 @@ export class AmazonAPI extends BaseAPI {
         this.logger.info(`collectProducts for ${input.length} urls`);
         const [safeInput, safeOpt] = assertInput(input, opt, 'collectProducts');
         return this.run(safeInput, DATASET_ID.PRODUCT, safeOpt);
+    }
+    /**
+     * Discover Amazon products by best sellers category URL
+     * @param input - an array of filters to starts collection for
+     * @param opt - dataset options to control the request behavior
+     * @returns a promise that resolves with snapshot meta
+     */
+    discoverProductsByBestSellerURL(
+        input: AmazonDiscoverProductsByBSUrlFilter[],
+        opt: DiscoverOptions,
+    ) {
+        this.logger.info(
+            `discoverProductsByBestSellerURL for ${input.length} urls`,
+        );
+        const [safeInput, safeOpt] = assertInput(
+            input,
+            opt,
+            'discoverProductsByBestSellerURL',
+        );
+        return this.run(safeInput, DATASET_ID.PRODUCT, {
+            ...safeOpt,
+            async: true,
+            type: 'discover_new',
+            discoverBy: 'best_sellers_url',
+        });
+    }
+    /**
+     * Discover Amazon products by best sellers category URL
+     * @param input - an array of filters to starts collection for
+     * @param opt - dataset options to control the request behavior
+     * @returns a promise that resolves with snapshot meta
+     */
+    discoverProductsByCategoryURL(
+        input: string[] | AmazonDiscoverProductsByCategoryURLFilter[],
+        opt: DiscoverOptions,
+    ) {
+        this.logger.info(
+            `discoverProductsByCategoryURL for ${input.length} urls`,
+        );
+        const [safeInput, safeOpt] = assertInput(
+            input,
+            opt,
+            'discoverProductsByCategoryURL',
+        );
+        return this.run(safeInput, DATASET_ID.PRODUCT, {
+            ...safeOpt,
+            async: true,
+            type: 'discover_new',
+            discoverBy: 'category_url',
+        });
+    }
+    /**
+     * Discover Amazon products by keywords
+     * @param input - an array of filters to starts collection for
+     * @param opt - dataset options to control the request behavior
+     * @returns a promise that resolves with snapshot meta
+     */
+    discoverProductsByKeyword(
+        input: AmazonDiscoverProductsByKeywordFilter[],
+        opt: DiscoverOptions,
+    ) {
+        this.logger.info(`discoverProductsByKeyword for ${input.length} urls`);
+        const [safeInput, safeOpt] = assertInput(
+            input,
+            opt,
+            'discoverProductsByKeyword',
+        );
+        return this.run(safeInput, DATASET_ID.PRODUCT, {
+            ...safeOpt,
+            async: true,
+            type: 'discover_new',
+            discoverBy: 'keyword',
+        });
+    }
+    /**
+     * Discover Amazon products by UPC number
+     * @param input - an array of filters to starts collection for
+     * @param opt - dataset options to control the request behavior
+     * @returns a promise that resolves with snapshot meta
+     */
+    discoverProductsByUPC(
+        input: AmazonDiscoverProductsByUPCFilter[],
+        opt: DiscoverOptions,
+    ) {
+        this.logger.info(`discoverProductsByUPC for ${input.length} urls`);
+        const [safeInput, safeOpt] = assertInput(
+            input,
+            opt,
+            'discoverProductsByUPC',
+        );
+        return this.run(safeInput, DATASET_ID.PRODUCT, {
+            ...safeOpt,
+            async: true,
+            type: 'discover_new',
+            discoverBy: 'upc',
+        });
     }
     /**
      * fetch Amazon product reviews by product URLs

@@ -11,8 +11,8 @@ export class Router {
     amazon: AmazonAPI;
 
     constructor(opts: BaseAPIOptions) {
-        this.linkedin = new LinkedinAPI(opts);
         this.snapshot = new SnapshotAPI(opts);
+        this.linkedin = new LinkedinAPI(opts);
         this.chatGPT = new ChatgptAPI(opts);
         this.amazon = new AmazonAPI(opts);
     }
