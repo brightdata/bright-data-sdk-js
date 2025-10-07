@@ -29,7 +29,7 @@
         "build:dev": "npm run build:clean && rollup --watch -c",
         "build:dev:dts": "tsc --project tsconfig.dts.json --watch",
         "prepublishOnly": "npm test && npm run sanity && npm run build",
-        "release": "semantic-release --dry-run"
+        "release": "semantic-release"
     },
     "keywords": [
         "brightdata",
