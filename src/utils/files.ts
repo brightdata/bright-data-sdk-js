@@ -1,6 +1,7 @@
+import { createWriteStream, type Stats } from 'node:fs';
 import fs from 'node:fs/promises';
-import type { Stats } from 'node:fs';
 import path from 'node:path';
+import { type Dispatcher } from 'undici';
 import { getLogger } from './logger';
 import { BRDError, FSError } from './errors';
 import { isStrArray } from './misc';
@@ -34,7 +35,7 @@ export const stringifyResults = (
 
 export const getFilename = (
     filename: string | void,
-    format: ContentFormat,
+    format: string,
 ): string => {
     if (filename) {
         return path.extname(filename) ? filename : `${filename}.${format}`;
@@ -42,16 +43,26 @@ export const getFilename = (
     return `brightdata_content_${Date.now()}.${format}`;
 };
 
-export const writeContent = async (content: string, filename: string) => {
+export const getAbsAndEnsureDir = async (filename: string) => {
     try {
         const target = path.resolve(filename);
+        await fs.mkdir(path.dirname(target), { recursive: true });
+        return target;
+    } catch (e: unknown) {
+        const msg = `failed to create dirs ${filename}:`;
+        throw new FSError(`${msg} ${(e as Error).message}`);
+    }
+};
+
+export const writeContent = async (content: string, filename: string) => {
+    try {
+        const target = await getAbsAndEnsureDir(filename);
         logger.info(`writing ${target}`);
 
-        await fs.mkdir(path.dirname(target), { recursive: true });
         await fs.writeFile(target, content, 'utf8');
         const stats = await statSafe(target);
 
-        if (!stats) throw new Error('file was not created successfully');
+        if (!stats) throw new FSError('file was not created successfully');
 
         logger.info(`written successfully: ${target} (${stats.size} bytes)`);
         return target;
@@ -72,4 +83,20 @@ export const writeContent = async (content: string, filename: string) => {
 
         throw new FSError(`${msg} ${err.message}`);
     }
+};
+
+export interface WritingOpaque {
+    filename: string;
+    assertStatus?: (status: number) => void;
+}
+
+export const routeDownloadStream: Dispatcher.StreamFactory<WritingOpaque> = ({
+    statusCode,
+    opaque,
+}) => {
+    const { assertStatus, filename } = opaque;
+
+    assertStatus?.(statusCode);
+
+    return createWriteStream(filename);
 };

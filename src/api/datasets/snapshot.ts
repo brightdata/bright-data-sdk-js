@@ -1,10 +1,22 @@
 import { API_ENDPOINT } from '../../utils/constants';
 import { APIError, BRDError } from '../../utils/errors';
-import { request, getDispatcher, assertResponse } from '../../utils/net';
-import { parseJSON } from '../../utils/misc';
+import {
+    request,
+    stream,
+    getDispatcher,
+    assertResponse,
+    throwInvalidStatus,
+} from '../../utils/net';
+import {
+    routeDownloadStream,
+    getFilename,
+    getAbsAndEnsureDir,
+} from '../../utils/files';
+import { parseJSON, getRandomInt, sleep } from '../../utils/misc';
 import {
     SnapshotIdSchema,
     SnapshotDownloadOptionsSchema,
+    SnapshotDownloadOptionsSchemaType,
 } from '../../schemas/datasets';
 import { assertSchema } from '../../schemas/utils';
 import type {
@@ -12,6 +24,16 @@ import type {
     SnapshotStatusResponse,
 } from '../../types/datasets';
 import { BaseAPI, BaseAPIOptions } from './base';
+
+const assertDownloadStatus = (status: number) => {
+    if (status < 202) return;
+
+    if (status === 202) {
+        throw new BRDError('snapshot is not ready yet, please try again later');
+    }
+
+    throwInvalidStatus(status, 'snapshot download failed');
+};
 
 export class SnapshotAPI extends BaseAPI {
     constructor(opts: BaseAPIOptions) {
@@ -36,9 +58,9 @@ export class SnapshotAPI extends BaseAPI {
      * Download the data from a dataset snapshot.
      * @param snapshotId - The unique identifier of the snapshot
      * @param opts - Download options including format and compression settings
-     * @returns A promise that resolves with the snapshot data
+     * @returns A promise that resolves with the full filename where the data is saved
      */
-    async download(snapshotId: string, options: SnapshotDownloadOptions = {}) {
+    async download(snapshotId: string, options?: SnapshotDownloadOptions) {
         const safeId = assertSchema(
             SnapshotIdSchema,
             snapshotId,
@@ -46,7 +68,7 @@ export class SnapshotAPI extends BaseAPI {
         );
         const safeOpts = assertSchema(
             SnapshotDownloadOptionsSchema,
-            options,
+            options || {},
             'snapshot.download: invalid options',
         );
         return this.#download(safeId, safeOpts);
@@ -85,24 +107,70 @@ export class SnapshotAPI extends BaseAPI {
         }
     }
 
-    async #download(snapshotId: string, opts: SnapshotDownloadOptions = {}) {
+    async #download(
+        snapshotId: string,
+        options: SnapshotDownloadOptionsSchemaType,
+    ): Promise<string> {
         this.logger.info(`fetching snapshot for id ${snapshotId}`);
+
         const url = API_ENDPOINT.SNAPSHOT_DOWNLOAD.replace(
             '{snapshot_id}',
             snapshotId,
         );
 
         try {
-            const response = await request(url, {
-                headers: this.authHeaders,
-                query: opts,
-                dispatcher: getDispatcher(),
-            });
+            if (options.statusPolling) {
+                await this.#awaitReady(snapshotId);
+            }
 
-            return await assertResponse(response, false);
+            const filename = getFilename(options.filename, options.format);
+            const target = await getAbsAndEnsureDir(filename);
+
+            this.logger.info(
+                `starting streaming snapshot ${snapshotId} data to ${target}`,
+            );
+
+            await stream(
+                url,
+                {
+                    method: 'GET',
+                    headers: this.authHeaders,
+                    query: {
+                        format: options.format,
+                        compress: options.compress,
+                    },
+                    opaque: {
+                        filename: target,
+                        assertStatus: assertDownloadStatus,
+                    },
+                },
+                routeDownloadStream,
+            );
+
+            return target;
         } catch (e: unknown) {
             if (e instanceof BRDError) throw e;
             throw new APIError(`operation failed: ${(e as Error).message}`);
+        }
+    }
+
+    async #awaitReady(snapshotId: string): Promise<void> {
+        this.logger.info(`polling snapshot status for id ${snapshotId}`);
+
+        for (;;) {
+            const { status } = await this.#getStatus(snapshotId);
+
+            if (status === 'ready') break;
+            if (status === 'failed') {
+                throw new BRDError('snapshot generation failed');
+            }
+
+            const delayMs = getRandomInt(10_000, 30_000);
+            this.logger.info(
+                `snapshot ${snapshotId} is not ready yet, waiting for ${delayMs}ms`,
+            );
+
+            await sleep(delayMs);
         }
     }
 

@@ -15,3 +15,8 @@ export const ZoneNameSchema = z
     .refine((val) => !val.endsWith('_'), {
         message: 'zone name cannot end with an underscore',
     });
+
+export const FilenameSchema = z
+    .string()
+    .min(1)
+    .transform((v) => v.replace(/[<>:"\\|?*]/g, '_'));

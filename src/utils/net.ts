@@ -3,7 +3,9 @@ import {
     Agent,
     interceptors,
     request as lib_request,
+    stream as lib_stream,
 } from 'undici';
+import type { UrlObject } from 'node:url';
 import {
     DEFAULT_TIMEOUT,
     MAX_RETRIES,
@@ -33,24 +35,49 @@ export const getDispatcher = (params: GetDispatcherOptions = {}) => {
     );
 };
 
-export const request: typeof lib_request = async (url, opts) => {
+const log = (
+    method = 'GET',
+    url: string | URL | UrlObject,
+    query?: Record<string, unknown>,
+    body?: unknown,
+) => {
     let meta = '';
 
-    if (opts?.query) {
-        meta += ` query=${JSON.stringify(opts.query)}`;
-    }
-    if (opts?.body) {
-        if (meta) meta += ' ';
-        meta += 'body=';
-        meta +=
-            typeof opts.body === 'string'
-                ? opts.body
-                : JSON.stringify(opts.body);
+    if (query) {
+        meta += ` query=${JSON.stringify(query)}`;
     }
 
-    logRequest(opts?.method || 'GET', JSON.stringify(url), meta);
+    if (typeof body === 'string') {
+        if (meta) meta += ' ';
+        meta += `body=${body}`;
+    }
+
+    logRequest(method, JSON.stringify(url), meta);
+};
+
+export const request: typeof lib_request = async (url, opts) => {
+    log(opts?.method, url, opts?.query, opts?.body);
     return lib_request(url, opts);
 };
+
+export const stream: typeof lib_stream = async (url, opts, factory) => {
+    log(opts?.method, url, opts?.query, opts?.body);
+    return lib_stream(url, opts, factory);
+};
+
+export function throwInvalidStatus(status: number, responseTxt: string): never {
+    if (status === 401) {
+        throw new AuthenticationError(
+            'invalid API key or insufficient permissions',
+        );
+    }
+
+    if (status === 400) {
+        throw new ValidationError(`bad request: ${responseTxt}`);
+    }
+
+    throw new APIError(`request failed`, status, responseTxt);
+}
 
 export async function assertResponse(
     response: Dispatcher.ResponseData,
@@ -68,17 +95,5 @@ export async function assertResponse(
         return parse ? await response.body.text() : response.body;
     }
 
-    if (response.statusCode === 401) {
-        throw new AuthenticationError(
-            'invalid API key or insufficient permissions',
-        );
-    }
-
-    const responseTxt = await response.body.text();
-
-    if (response.statusCode === 400) {
-        throw new ValidationError(`bad request: ${responseTxt}`);
-    }
-
-    throw new APIError(`request failed`, response.statusCode, responseTxt);
+    throwInvalidStatus(response.statusCode, await response.body.text());
 }

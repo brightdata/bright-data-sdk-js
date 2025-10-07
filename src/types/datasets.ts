@@ -49,8 +49,14 @@ export type DiscoverOptions = Omit<
 >;
 
 export interface SnapshotDownloadOptions {
-    format?: SnapshotFormat;
-    compress?: boolean;
+    /**
+     * If set to true, the SDK will poll the snapshot status until it is ready
+     * @default true
+     */
+    statusPolling: boolean;
+    filename?: string;
+    format: string;
+    compress: boolean;
 }
 
 export type SnapshotStatus = 'running' | 'ready' | 'failed';
