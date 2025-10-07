@@ -1,6 +1,14 @@
+import fs from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import typescript from '@rollup/plugin-typescript';
 import replace from '@rollup/plugin-replace';
-import pkg from './package.json' assert { type: 'json' };
+
+const configPath = join(
+    dirname(fileURLToPath(import.meta.url)),
+    './package.json',
+);
+const pkg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
 export default {
     input: 'src/index.ts',
