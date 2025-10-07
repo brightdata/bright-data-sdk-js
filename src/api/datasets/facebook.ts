@@ -1,11 +1,17 @@
 import type {
     DatasetOptions,
+    DiscoverOptions,
     UnknownRecord,
     FacebookCollectUserPostsFilter,
     FacebookCollectGroupPostsFilter,
     FacebookCollectPostCommentsFilter,
     InstagramDiscoverReelsByProfileURLFilter,
     FacebookCompanyReviewsFilter,
+    FacebookDiscoverPostsByUserNameFilter,
+    FacebookDiscoverMarketplaceItemsByKeywordFilter,
+    FacebookDiscoverMarketplaceItemsByURLFilter,
+    FacebookDiscoverEventsByURLFilter,
+    FacebookDiscoverEventsByVenueFilter,
 } from '../../types/datasets';
 import {
     DatasetOptionsSchema,
@@ -63,6 +69,29 @@ export class FacebookAPI extends BaseAPI {
         return this.run(safeInput, DATASET_ID.POSTS_USER, safeOpt);
     }
     /**
+     * Discover Facebook user posts data by one or more user names.
+     * @param input - an array of filters to starts collection for
+     * @param opt - dataset options to control the request behavior
+     * @returns a promise that resolves with snapshot meta
+     */
+    discoverPostsByUserName(
+        input: FacebookDiscoverPostsByUserNameFilter[],
+        opt: DiscoverOptions,
+    ) {
+        this.logger.info(`discoverPostsByUserName for ${input.length} urls`);
+        const [safeInput, safeOpt] = assertInput(
+            input,
+            opt,
+            'discoverPostsByUserName',
+        );
+        return this.run(safeInput, DATASET_ID.POSTS_USER, {
+            ...safeOpt,
+            async: true,
+            type: 'discover_new',
+            discoverBy: 'user_name',
+        });
+    }
+    /**
      * Fetch Facebook group posts data for one or more group URLs.
      * @param input - an array of Facebook group URLs or filters
      * @param opt - dataset options to control the request behavior
@@ -99,7 +128,7 @@ export class FacebookAPI extends BaseAPI {
         return this.run(safeInput, DATASET_ID.COMMENTS, safeOpt);
     }
     /**
-     * Fetch Facebook post marketplace data for one or more item URLs.
+     * Fetch Facebook marketplace item data for one or more item URLs.
      * @param input - an array of Facebook marketplace items URLs or filters
      * @param opt - dataset options to control the request behavior
      * @returns a promise that resolves with the marketplace items data or snapshot meta
@@ -115,6 +144,56 @@ export class FacebookAPI extends BaseAPI {
             'collectMarketplaceItems',
         );
         return this.run(safeInput, DATASET_ID.MARKETPLACE, safeOpt);
+    }
+    /**
+     * Discover Facebook marketplace item data by one or more keywords.
+     * @param input - an array of filters to starts collection for
+     * @param opt - dataset options to control the request behavior
+     * @returns a promise that resolves with snapshot meta
+     */
+    discoverMarketplaceItemsByKeyword(
+        input: FacebookDiscoverMarketplaceItemsByKeywordFilter[],
+        opt: DiscoverOptions,
+    ) {
+        this.logger.info(
+            `discoverMarketplaceItemsByKeyword for ${input.length} urls`,
+        );
+        const [safeInput, safeOpt] = assertInput(
+            input,
+            opt,
+            'discoverMarketplaceItemsByKeyword',
+        );
+        return this.run(safeInput, DATASET_ID.MARKETPLACE, {
+            ...safeOpt,
+            async: true,
+            type: 'discover_new',
+            discoverBy: 'keyword',
+        });
+    }
+    /**
+     * Discover Facebook marketplace item data by one or more market URLs.
+     * @param input - an array of filters to starts collection for
+     * @param opt - dataset options to control the request behavior
+     * @returns a promise that resolves with snapshot meta
+     */
+    discoverMarketplaceItemsByURL(
+        input: string[] | FacebookDiscoverMarketplaceItemsByURLFilter[],
+        opt: DiscoverOptions,
+    ) {
+        this.logger.info(
+            `discoverMarketplaceItemsByURL for ${input.length} urls`,
+        );
+        const [safeInput, safeOpt] = assertInput(
+            input,
+            opt,
+            'discoverMarketplaceItemsByURL',
+        );
+        return this.run(safeInput, DATASET_ID.MARKETPLACE, {
+            ...safeOpt,
+            async: true,
+            type: 'discover_new',
+            discoverBy: 'url',
+        });
     }
     /**
      * Fetch Facebook posts data by one or more URLs.
@@ -137,6 +216,52 @@ export class FacebookAPI extends BaseAPI {
         this.logger.info(`collectEvents for ${input.length} inputs`);
         const [safeInput, safeOpt] = assertInput(input, opt, 'collectEvents');
         return this.run(safeInput, DATASET_ID.EVENTS, safeOpt);
+    }
+    /**
+     * Discover Facebook events by search URLs
+     * @param input - an array of filters to starts collection for
+     * @param opt - dataset options to control the request behavior
+     * @returns a promise that resolves with snapshot meta
+     */
+    discoverEventsByURL(
+        input: string[] | FacebookDiscoverEventsByURLFilter[],
+        opt: DiscoverOptions,
+    ) {
+        this.logger.info(`discoverEventsByURL for ${input.length} urls`);
+        const [safeInput, safeOpt] = assertInput(
+            input,
+            opt,
+            'discoverEventsByURL',
+        );
+        return this.run(safeInput, DATASET_ID.EVENTS, {
+            ...safeOpt,
+            async: true,
+            type: 'discover_new',
+            discoverBy: 'url',
+        });
+    }
+    /**
+     * Discover Facebook events by search URLs
+     * @param input - an array of filters to starts collection for
+     * @param opt - dataset options to control the request behavior
+     * @returns a promise that resolves with snapshot meta
+     */
+    discoverEventsByVenue(
+        input: string[] | FacebookDiscoverEventsByVenueFilter[],
+        opt: DiscoverOptions,
+    ) {
+        this.logger.info(`discoverEventsByVenue for ${input.length} venues`);
+        const [safeInput, safeOpt] = assertInput(
+            input,
+            opt,
+            'discoverEventsByVenue',
+        );
+        return this.run(safeInput, DATASET_ID.EVENTS, {
+            ...safeOpt,
+            async: true,
+            type: 'discover_new',
+            discoverBy: 'venue',
+        });
     }
     /**
      * Fetch Instagram reels data by one or more profile URLs.

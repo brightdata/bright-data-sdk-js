@@ -398,3 +398,66 @@ export interface FacebookCompanyReviewsFilter extends UnknownRecord {
     url: string;
     num_of_reviews?: number;
 }
+
+export interface FacebookDiscoverPostsByUserNameFilter extends UnknownRecord {
+    /**
+     * Facebook user name
+     * @example 'LeBron'
+     */
+    user_name: string;
+    /**
+     * Start date filter MM-DD-YYYY (should be earlier than "end_date")
+     */
+    start_date?: string;
+    /**
+     * End date filter MM-DD-YYYY (should be later than "start_date")
+     */
+    end_date?: string;
+    /**
+     * Retrieve profile data even if no posts are available.
+     */
+    include_profile_data?: boolean;
+}
+
+export interface FacebookDiscoverMarketplaceItemsByKeywordFilter
+    extends UnknownRecord {
+    /**
+     * Facebook user name
+     * @example 'ps5'
+     */
+    keyword: string;
+    city?: string;
+    radius?: number;
+    /**
+     * Filter listings by posted date
+     */
+    date_listed?: 'Last 24 hours' | 'Last 7 days' | 'Last 30 days' | 'All';
+}
+
+export interface FacebookDiscoverMarketplaceItemsByURLFilter
+    extends UnknownRecord {
+    /**
+     * Facebook market url
+     * @example 'https://www.facebook.com/marketplace/sanfrancisco/apparel'
+     */
+    url: string;
+}
+
+export interface FacebookDiscoverEventsByURLFilter extends UnknownRecord {
+    /**
+     * Facebook events search URL
+     * @example 'https://www.facebook.com/events/explore/us-atlanta/107991659233606'
+     */
+    url: string;
+}
+
+export interface FacebookDiscoverEventsByVenueFilter extends UnknownRecord {
+    /**
+     * @example 'https://www.facebook.com/nohoclub/events'
+     */
+    url: string;
+    /**
+     * Collect only upcoming events
+     */
+    upcoming_events_only?: boolean;
+}
