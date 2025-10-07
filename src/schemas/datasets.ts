@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { FilenameSchema } from './shared';
 
 const SnapshotFormatSchema = z
     .enum(['json', 'csv', 'ndjson', 'jsonl'])
@@ -52,14 +53,16 @@ export const ChatGPTInputSchema = z
         v.map((item) => ({ ...item, url: 'https://chatgpt.com/' })),
     );
 
-export const SnapshotDownloadEndpointOptionsSchema = z.object({
+export const SnapshotDownloadOptionsSchema = z.object({
     format: SnapshotFormatSchema,
     compress: z.boolean().default(false),
-});
-
-export const SnapshotDownloadOptionsSchema = z.object({
+    filename: FilenameSchema.optional(),
     statusPolling: z.boolean().default(true),
 });
+
+export type SnapshotDownloadOptionsSchemaType = z.infer<
+    typeof SnapshotDownloadOptionsSchema
+>;
 
 export const SnapshotIdSchema = z
     .string()

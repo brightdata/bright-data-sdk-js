@@ -65,6 +65,20 @@ export const stream: typeof lib_stream = async (url, opts, factory) => {
     return lib_stream(url, opts, factory);
 };
 
+export function throwInvalidStatus(status: number, responseTxt: string): never {
+    if (status === 401) {
+        throw new AuthenticationError(
+            'invalid API key or insufficient permissions',
+        );
+    }
+
+    if (status === 400) {
+        throw new ValidationError(`bad request: ${responseTxt}`);
+    }
+
+    throw new APIError(`request failed`, status, responseTxt);
+}
+
 export async function assertResponse(
     response: Dispatcher.ResponseData,
     parse?: true,
@@ -81,17 +95,5 @@ export async function assertResponse(
         return parse ? await response.body.text() : response.body;
     }
 
-    if (response.statusCode === 401) {
-        throw new AuthenticationError(
-            'invalid API key or insufficient permissions',
-        );
-    }
-
-    const responseTxt = await response.body.text();
-
-    if (response.statusCode === 400) {
-        throw new ValidationError(`bad request: ${responseTxt}`);
-    }
-
-    throw new APIError(`request failed`, response.statusCode, responseTxt);
+    throwInvalidStatus(response.statusCode, await response.body.text());
 }

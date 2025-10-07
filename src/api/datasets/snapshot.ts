@@ -1,20 +1,39 @@
-import { type Dispatcher } from 'undici';
 import { API_ENDPOINT } from '../../utils/constants';
 import { APIError, BRDError } from '../../utils/errors';
-import { request, getDispatcher, assertResponse } from '../../utils/net';
+import {
+    request,
+    stream,
+    getDispatcher,
+    assertResponse,
+    throwInvalidStatus,
+} from '../../utils/net';
+import {
+    routeDownloadStream,
+    getFilename,
+    getAbsAndEnsureDir,
+} from '../../utils/files';
 import { parseJSON, getRandomInt, sleep } from '../../utils/misc';
 import {
     SnapshotIdSchema,
-    SnapshotDownloadEndpointOptionsSchema,
     SnapshotDownloadOptionsSchema,
+    SnapshotDownloadOptionsSchemaType,
 } from '../../schemas/datasets';
 import { assertSchema } from '../../schemas/utils';
 import type {
     SnapshotDownloadOptions,
-    SnapshotDownloadEndpointOptions,
     SnapshotStatusResponse,
 } from '../../types/datasets';
 import { BaseAPI, BaseAPIOptions } from './base';
+
+const assertDownloadStatus = (status: number) => {
+    if (status < 202) return;
+
+    if (status === 202) {
+        throw new BRDError('snapshot is not ready yet, please try again later');
+    }
+
+    throwInvalidStatus(status, 'snapshot download failed');
+};
 
 export class SnapshotAPI extends BaseAPI {
     constructor(opts: BaseAPIOptions) {
@@ -39,29 +58,20 @@ export class SnapshotAPI extends BaseAPI {
      * Download the data from a dataset snapshot.
      * @param snapshotId - The unique identifier of the snapshot
      * @param opts - Download options including format and compression settings
-     * @returns A promise that resolves with the snapshot data
+     * @returns A promise that resolves with the full filename where the data is saved
      */
-    async download(
-        snapshotId: string,
-        downloadOptions?: SnapshotDownloadEndpointOptions,
-        options?: SnapshotDownloadOptions,
-    ) {
+    async download(snapshotId: string, options?: SnapshotDownloadOptions) {
         const safeId = assertSchema(
             SnapshotIdSchema,
             snapshotId,
             'snapshot.download: invalid snapshot id',
-        );
-        const safeEOpts = assertSchema(
-            SnapshotDownloadEndpointOptionsSchema,
-            downloadOptions || {},
-            'snapshot.download: invalid options',
         );
         const safeOpts = assertSchema(
             SnapshotDownloadOptionsSchema,
             options || {},
             'snapshot.download: invalid options',
         );
-        return this.#download(safeId, safeEOpts, safeOpts);
+        return this.#download(safeId, safeOpts);
     }
     /**
      * Cancel the dataset gathering process.
@@ -99,34 +109,45 @@ export class SnapshotAPI extends BaseAPI {
 
     async #download(
         snapshotId: string,
-        endpointOpts: SnapshotDownloadEndpointOptions,
-        options: SnapshotDownloadOptions,
-    ): Promise<Dispatcher.ResponseData['body']> {
+        options: SnapshotDownloadOptionsSchemaType,
+    ): Promise<string> {
         this.logger.info(`fetching snapshot for id ${snapshotId}`);
+
         const url = API_ENDPOINT.SNAPSHOT_DOWNLOAD.replace(
             '{snapshot_id}',
             snapshotId,
         );
 
         try {
-            const response = await request(url, {
-                headers: this.authHeaders,
-                query: endpointOpts,
-                dispatcher: getDispatcher(),
-            });
-
-            if (response.statusCode === 202) {
-                if (!options.statusPolling) {
-                    throw new BRDError(
-                        'snapshot is not ready yet, please try again later',
-                    );
-                }
-
+            if (options.statusPolling) {
                 await this.#awaitReady(snapshotId);
-                return this.#download(snapshotId, endpointOpts, options);
             }
 
-            return await assertResponse(response, false);
+            const filename = getFilename(options.filename, options.format);
+            const target = await getAbsAndEnsureDir(filename);
+
+            this.logger.info(
+                `starting streaming snapshot ${snapshotId} data to ${target}`,
+            );
+
+            await stream(
+                url,
+                {
+                    method: 'GET',
+                    headers: this.authHeaders,
+                    query: {
+                        format: options.format,
+                        compress: options.compress,
+                    },
+                    opaque: {
+                        filename: target,
+                        assertStatus: assertDownloadStatus,
+                    },
+                },
+                routeDownloadStream,
+            );
+
+            return target;
         } catch (e: unknown) {
             if (e instanceof BRDError) throw e;
             throw new APIError(`operation failed: ${(e as Error).message}`);
