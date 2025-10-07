@@ -347,3 +347,54 @@ export interface FacebookCollectUserPostsFilter extends UnknownRecord {
      */
     include_profile_data?: boolean;
 }
+
+export interface FacebookCollectGroupPostsFilter extends UnknownRecord {
+    /**
+     * Search posts by group URL (only posts visible and discoverable on
+     * the input URL's page)
+     */
+    url: string;
+    /**
+     * The number of recent posts to collect, missing value indicates no limit.
+     */
+    num_of_posts?: number;
+    /**
+     * Post id's to exclude from the collection
+     */
+    posts_to_not_include?: string[];
+    /**
+     * Start date filter MM-DD-YYYY (should be earlier than "end_date")
+     */
+    start_date?: string;
+    /**
+     * End date filter MM-DD-YYYY (should be later than "start_date")
+     */
+    end_date?: string;
+}
+
+export interface FacebookCollectPostCommentsFilter extends UnknownRecord {
+    /**
+     * Required Facebook post url
+     */
+    url: string;
+    /**
+     * Indicator to return all replies to comments; this will increase the runtime of the collector
+     */
+    get_all_replies?: boolean;
+    /**
+     * Limit the number of records
+     */
+    limit_records?: number;
+    /**
+     * Sort order for comments
+     */
+    comments_sort?: string;
+}
+
+export interface FacebookCompanyReviewsFilter extends UnknownRecord {
+    /**
+     * The URL of the reviewed company
+     */
+    url: string;
+    num_of_reviews?: number;
+}
