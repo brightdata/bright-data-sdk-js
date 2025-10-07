@@ -30,3 +30,9 @@ export const dropEmptyKeys = (obj: Record<string, unknown>) => {
 
 export const maskKey = (key: string) =>
     key.length > 8 ? `***${key.slice(-4)}` : '***';
+
+export const sleep = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+
+export const getRandomInt = (min: number, max: number) =>
+    Math.floor(Math.random() * (max - min + 1)) + min;

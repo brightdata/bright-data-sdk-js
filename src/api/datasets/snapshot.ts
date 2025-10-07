@@ -1,14 +1,17 @@
+import { type Dispatcher } from 'undici';
 import { API_ENDPOINT } from '../../utils/constants';
 import { APIError, BRDError } from '../../utils/errors';
 import { request, getDispatcher, assertResponse } from '../../utils/net';
-import { parseJSON } from '../../utils/misc';
+import { parseJSON, getRandomInt, sleep } from '../../utils/misc';
 import {
     SnapshotIdSchema,
+    SnapshotDownloadEndpointOptionsSchema,
     SnapshotDownloadOptionsSchema,
 } from '../../schemas/datasets';
 import { assertSchema } from '../../schemas/utils';
 import type {
     SnapshotDownloadOptions,
+    SnapshotDownloadEndpointOptions,
     SnapshotStatusResponse,
 } from '../../types/datasets';
 import { BaseAPI, BaseAPIOptions } from './base';
@@ -38,18 +41,27 @@ export class SnapshotAPI extends BaseAPI {
      * @param opts - Download options including format and compression settings
      * @returns A promise that resolves with the snapshot data
      */
-    async download(snapshotId: string, options: SnapshotDownloadOptions = {}) {
+    async download(
+        snapshotId: string,
+        downloadOptions?: SnapshotDownloadEndpointOptions,
+        options?: SnapshotDownloadOptions,
+    ) {
         const safeId = assertSchema(
             SnapshotIdSchema,
             snapshotId,
             'snapshot.download: invalid snapshot id',
         );
-        const safeOpts = assertSchema(
-            SnapshotDownloadOptionsSchema,
-            options,
+        const safeEOpts = assertSchema(
+            SnapshotDownloadEndpointOptionsSchema,
+            downloadOptions || {},
             'snapshot.download: invalid options',
         );
-        return this.#download(safeId, safeOpts);
+        const safeOpts = assertSchema(
+            SnapshotDownloadOptionsSchema,
+            options || {},
+            'snapshot.download: invalid options',
+        );
+        return this.#download(safeId, safeEOpts, safeOpts);
     }
     /**
      * Cancel the dataset gathering process.
@@ -85,7 +97,11 @@ export class SnapshotAPI extends BaseAPI {
         }
     }
 
-    async #download(snapshotId: string, opts: SnapshotDownloadOptions = {}) {
+    async #download(
+        snapshotId: string,
+        endpointOpts: SnapshotDownloadEndpointOptions,
+        options: SnapshotDownloadOptions,
+    ): Promise<Dispatcher.ResponseData['body']> {
         this.logger.info(`fetching snapshot for id ${snapshotId}`);
         const url = API_ENDPOINT.SNAPSHOT_DOWNLOAD.replace(
             '{snapshot_id}',
@@ -95,14 +111,45 @@ export class SnapshotAPI extends BaseAPI {
         try {
             const response = await request(url, {
                 headers: this.authHeaders,
-                query: opts,
+                query: endpointOpts,
                 dispatcher: getDispatcher(),
             });
+
+            if (response.statusCode === 202) {
+                if (!options.statusPolling) {
+                    throw new BRDError(
+                        'snapshot is not ready yet, please try again later',
+                    );
+                }
+
+                await this.#awaitReady(snapshotId);
+                return this.#download(snapshotId, endpointOpts, options);
+            }
 
             return await assertResponse(response, false);
         } catch (e: unknown) {
             if (e instanceof BRDError) throw e;
             throw new APIError(`operation failed: ${(e as Error).message}`);
+        }
+    }
+
+    async #awaitReady(snapshotId: string): Promise<void> {
+        this.logger.info(`polling snapshot status for id ${snapshotId}`);
+
+        for (;;) {
+            const { status } = await this.#getStatus(snapshotId);
+
+            if (status === 'ready') break;
+            if (status === 'failed') {
+                throw new BRDError('snapshot generation failed');
+            }
+
+            const delayMs = getRandomInt(10_000, 30_000);
+            this.logger.info(
+                `snapshot ${snapshotId} is not ready yet, waiting for ${delayMs}ms`,
+            );
+
+            await sleep(delayMs);
         }
     }
 

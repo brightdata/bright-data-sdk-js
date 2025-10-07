@@ -52,9 +52,13 @@ export const ChatGPTInputSchema = z
         v.map((item) => ({ ...item, url: 'https://chatgpt.com/' })),
     );
 
-export const SnapshotDownloadOptionsSchema = z.object({
+export const SnapshotDownloadEndpointOptionsSchema = z.object({
     format: SnapshotFormatSchema,
     compress: z.boolean().default(false),
+});
+
+export const SnapshotDownloadOptionsSchema = z.object({
+    statusPolling: z.boolean().default(true),
 });
 
 export const SnapshotIdSchema = z
