@@ -282,6 +282,18 @@ npm install
 npm run build:dev
 ```
 
+## Commits conventions and releases
+
+We do use [Semantic Release](https://github.com/semantic-release/semantic-release) for automated releases and repo housekeeping. To allow Semantic Release do its job we follow some light commit message conventions:
+- use `fix:` prefix if commit fixes an issue (**triggers a PATCH release** `0.5.0` => `0.5.1`)
+- use `feat:` prefix if commit is part of a new feature (**triggers a MINOR release** `0.5.0` => `0.6.0`)
+- use `docs:` prefix if commit is updating a documentation (like README)
+- use `chore:` or no prefix for general purpose changes
+- use `BREAKING CHANGE:` in the commit footer if you need to release a new MAJOR version (`0.5.0` => `1.0.0`)
+
+  Examples: `fix: correct floating numbers bug`, `docs: fixed typo`
+
+
 ## Support
 
 For any issues, contact [Bright Data support](https://brightdata.com/contact), or open an issue in this repository.
