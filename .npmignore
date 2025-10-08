@@ -6,8 +6,6 @@ src/
 tests/
 .env*
 .prettierrc
-CHANGELOG.md
-CONTRIBUTION_GUIDE.md
 eslint.config.mjs
 .gitignore
 tsconfig.json
