@@ -11,27 +11,30 @@ npm install @brightdata/sdk
 ```
 
 ## Quick start
+
 ### 1. [Signup](https://brightdata.com/cp) and get your API key
 
 ### 2. Initialize the Client
 
 Create a file named pizzaSearch.mjs with the follwing content:
+
 ```javascript
 import { bdclient } from '@brightdata/sdk';
 
 const client = new bdclient({
-    apiKey: '[your_api_key_here]' // can also be defined as BRIGHTDATA_API_KEY env variable
+    apiKey: '[your_api_key_here]', // can also be defined as BRIGHTDATA_API_KEY env variable
 });
 ```
 
 ### 3. Launch your first request
 
 Add our search function:
+
 ```javascript
 import { bdclient } from '@brightdata/sdk';
 
 const client = new bdclient({
-    apiKey: '[your_api_key_here]' // can also be defined as BRIGHTDATA_API_KEY env variable
+    apiKey: '[your_api_key_here]', // can also be defined as BRIGHTDATA_API_KEY env variable
 });
 const result = await client.search('pizza restaurants');
 console.log(result);
@@ -54,8 +57,7 @@ node pizzaSearch.mjs
 - **Dual build**: Both ESM and CommonJS supported
 - **TypeScript**: Fully typed for different combinations of input and output data
 
-## Usage 
-
+## Usage
 
 ### Scrape websites
 
@@ -134,6 +136,21 @@ const filePath = await client.saveResults(data, {
 console.log(`Content saved to: ${filePath}`);
 ```
 
+### Trigger dataset snapshot collection
+
+```javascript
+const res = await client.datasets.linkedin.discoverCompanyPosts([
+    { url: 'https://www.linkedin.com/company/bright-data' },
+]);
+
+// thise will poll if snapshot is ready, and once it is - download it
+const filePath = await client.datasets.snapshot.download(res.snapshot_id, {
+    filename: './brd_posts.jsonl',
+    format: 'jsonl',
+});
+console.log(`Content saved to: ${filePath}`);
+```
+
 ## Configuration
 
 ### API Key
@@ -185,20 +202,21 @@ const client = new bdclient({
 ### Key Methods
 
 ### scrape(url, options)
+
 Scrapes a single URL or array of URLs using the Web Unlocker.
 
 **Parameters:**
 
-| Name                   | Type                                   | Description                                                     | Default   |
-|------------------------|----------------------------------------|-----------------------------------------------------------------|-----------|
-| `url`                  | `string` &#124; `string[]`            | Single URL string or array of URLs                              | —         |
-| `options.zone`         | `string`                               | Zone identifier (auto-configured if `null`)                     | —         |
-| `options.format`       | `"json"` &#124; `"raw"`                | Response format                                                 | `"raw"`   |
-| `options.method`       | `string`                               | HTTP method                                                     | `"GET"`   |
-| `options.country`      | `string`                               | Two-letter country code                                         | `""`      |
-| `options.dataFormat`   | `"markdown"` &#124; `"screenshot"` &#124; `"html"` | Returned content format                                         | `"html"`  |
-| `options.concurrency`  | `number`                               | Max parallel workers                                            | `10`      |
-| `options.timeout`      | `number` (ms)                          | Request timeout                                                 | `30000`   |
+| Name                  | Type                                               | Description                                 | Default  |
+| --------------------- | -------------------------------------------------- | ------------------------------------------- | -------- |
+| `url`                 | `string` &#124; `string[]`                         | Single URL string or array of URLs          | —        |
+| `options.zone`        | `string`                                           | Zone identifier (auto-configured if `null`) | —        |
+| `options.format`      | `"json"` &#124; `"raw"`                            | Response format                             | `"raw"`  |
+| `options.method`      | `string`                                           | HTTP method                                 | `"GET"`  |
+| `options.country`     | `string`                                           | Two-letter country code                     | `""`     |
+| `options.dataFormat`  | `"markdown"` &#124; `"screenshot"` &#124; `"html"` | Returned content format                     | `"html"` |
+| `options.concurrency` | `number`                                           | Max parallel workers                        | `10`     |
+| `options.timeout`     | `number` (ms)                                      | Request timeout                             | `30000`  |
 
 ### search(query, options)
 
@@ -206,17 +224,17 @@ Searches using the SERP API
 
 **Parameters:**
 
-| Name                     | Type                                             | Description                                   | Default     |
-|--------------------------|--------------------------------------------------|-----------------------------------------------|-------------|
-| `query`                  | `string` &#124; `string[]`                       | Search query string or array of queries       | —           |
-| `options.searchEngine`   | `"google"` &#124; `"bing"` &#124; `"yandex"`     | Search engine                                 | `"google"`  |
-| `options.zone`           | `string`                                         | Zone identifier (auto-configured if `null`)   | —           |
-| `options.format`         | `"json"` &#124; `"raw"`                          | Response format                               | `"raw"`     |
-| `options.method`         | `string`                                         | HTTP method                                   | `"GET"`     |
-| `options.country`        | `string`                                         | Two-letter country code                       | `""`        |
-| `options.dataFormat`     | `"markdown"` &#124; `"screenshot"` &#124; `"html"`| Returned content format                       | `"html"`    |
-| `options.concurrency`    | `number`                                         | Max parallel workers                          | `10`        |
-| `options.timeout`        | `number` (ms)                                    | Request timeout                               | `30000`     |
+| Name                   | Type                                               | Description                                 | Default    |
+| ---------------------- | -------------------------------------------------- | ------------------------------------------- | ---------- |
+| `query`                | `string` &#124; `string[]`                         | Search query string or array of queries     | —          |
+| `options.searchEngine` | `"google"` &#124; `"bing"` &#124; `"yandex"`       | Search engine                               | `"google"` |
+| `options.zone`         | `string`                                           | Zone identifier (auto-configured if `null`) | —          |
+| `options.format`       | `"json"` &#124; `"raw"`                            | Response format                             | `"raw"`    |
+| `options.method`       | `string`                                           | HTTP method                                 | `"GET"`    |
+| `options.country`      | `string`                                           | Two-letter country code                     | `""`       |
+| `options.dataFormat`   | `"markdown"` &#124; `"screenshot"` &#124; `"html"` | Returned content format                     | `"html"`   |
+| `options.concurrency`  | `number`                                           | Max parallel workers                        | `10`       |
+| `options.timeout`      | `number` (ms)                                      | Request timeout                             | `30000`    |
 
 ### saveResults(content, options)
 
@@ -224,11 +242,11 @@ Save content to local file.
 
 **Parameters:**
 
-| Name               | Type                                        | Description                                     | Default |
-|--------------------|---------------------------------------------|-------------------------------------------------|---------|
-| `content`          | `any`                                       | Content to save                                 | —       |
-| `options.filename` | `string`                                    | Output filename (auto-generated if `null`)      | —       |
-| `options.format`   | `string` (`"json"`, `"csv"`, `"txt"`)    | File format                                     | `"json"`|
+| Name               | Type                                  | Description                                | Default  |
+| ------------------ | ------------------------------------- | ------------------------------------------ | -------- |
+| `content`          | `any`                                 | Content to save                            | —        |
+| `options.filename` | `string`                              | Output filename (auto-generated if `null`) | —        |
+| `options.format`   | `string` (`"json"`, `"csv"`, `"txt"`) | File format                                | `"json"` |
 
 ### listZones()
 
@@ -252,6 +270,7 @@ try {
     }
 }
 ```
+
 ## Development
 
 For development installation:
