@@ -143,7 +143,7 @@ const res = await client.datasets.linkedin.discoverCompanyPosts([
     { url: 'https://www.linkedin.com/company/bright-data' },
 ]);
 
-// thise will poll if snapshot is ready, and once it is - download it
+// it will poll if snapshot is ready, and once it is - download it
 const filePath = await client.datasets.snapshot.download(res.snapshot_id, {
     filename: './brd_posts.jsonl',
     format: 'jsonl',
